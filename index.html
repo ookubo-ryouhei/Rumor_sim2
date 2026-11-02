@@ -1,0 +1,1027 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>救急車をどこに置く？</title>
+<style>
+:root{--navy:#17324E;--teal:#0E7C7B;--amber:#C8851A;--red:#C44536;--bg:#F4F6F8;--card:#FDFDFB;--line:#DCE3EA;--sub:#4E5D6E;--soft:#E9EEF3}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--navy);font-family:Meiryo,"メイリオ","Hiragino Sans",sans-serif;font-size:16px;line-height:1.6}
+header{background:var(--navy);color:#fff;padding:14px 18px}
+header h1{margin:0;font-size:24px}
+header p{margin:2px 0 0;font-size:14px;color:#C9D6E3}
+main{max-width:1280px;margin:0 auto;padding:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+h2{font-size:19px;margin:0 0 8px}
+h3{font-size:16px;margin:0 0 6px}
+.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:14px}
+.steps button{font:inherit;font-weight:bold;font-size:15px;border:2px solid var(--line);background:var(--card);color:var(--navy);border-radius:12px;padding:10px 8px;cursor:pointer;line-height:1.35;min-height:62px}
+.steps button small{display:block;font-weight:normal;font-size:12px;color:var(--sub)}
+.steps button.on{border-color:var(--teal);background:#E3F2F1}
+.steps button .lk{font-size:12px;color:#8A5A0F}
+body.unlocked .steps .lk{display:none}
+.layout{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+@media(min-width:1000px){.layout{grid-template-columns:minmax(0,1.9fr) minmax(0,1fr)}}
+.mapcard{padding:10px}
+#map{width:100%;height:auto;display:block;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+#map .site{cursor:pointer}
+.howto{font-size:14px;color:var(--sub);margin:6px 4px 0}
+.sel{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:8px}
+.chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:4px 12px;font-weight:bold;font-size:15px;background:var(--soft)}
+.chip.st{background:var(--red);color:#fff}
+.chip.tmp{background:var(--amber);color:#fff}
+.seg{display:inline-flex;border:2px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{font:inherit;font-size:15px;border:0;background:var(--card);color:var(--navy);padding:7px 12px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on{background:var(--navy);color:#fff;font-weight:bold}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}
+button.main{font:inherit;font-weight:bold;font-size:16px;border:0;border-radius:10px;padding:10px 16px;background:var(--teal);color:#fff;cursor:pointer}
+button.main:disabled{background:#9DB3B2;cursor:not-allowed}
+button.ghost{font:inherit;font-size:15px;border:2px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--card);color:var(--navy);cursor:pointer}
+button.amberb{background:var(--amber)}
+button.ghost:disabled{color:#9AA7B4;border-color:#E3E8ED;cursor:not-allowed}
+.msg{font-size:14px;color:var(--sub);min-height:1.5em}
+.msg.warn{color:var(--red);font-weight:bold}
+.metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px}
+.met{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.met .k{font-size:13px;color:var(--sub);line-height:1.3}
+.met .v{font-size:24px;font-weight:bold;line-height:1.3}
+.met .v small{font-size:14px;font-weight:normal}
+.met.wide{grid-column:1/-1}
+.dist{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:2px}
+.dist div{font-size:13px;line-height:1.3}
+.dist b{display:block;font-size:20px}
+.met[hidden]{display:none}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{border:1px solid var(--line);padding:5px 6px;text-align:center}
+th{background:var(--soft);font-weight:bold}
+#recTbl th{cursor:pointer;white-space:nowrap}
+#recTbl th.sorted{background:#D4E7E6}
+#recTbl td.best{background:#E3F2F1;font-weight:bold}
+.tblwrap{overflow-x:auto}
+details summary{cursor:pointer;font-weight:bold;font-size:16px}
+.model li{margin:2px 0}
+.note{font-size:13px;color:var(--sub)}
+.dtbl td:first-child{text-align:left}
+.dtbl .hot{color:var(--red);font-weight:bold}
+/* 再生 */
+#playBar{display:none;align-items:center;gap:10px;flex-wrap:wrap;margin:6px 4px 0}
+#playBar.on{display:flex}
+#clock{font-size:22px;font-weight:bold;min-width:120px}
+#playStat{font-size:14px;color:var(--sub)}
+/* パスワード */
+.lockTag{font-size:13px;font-weight:bold;color:#8A5A0F;background:#FBF0DC;border-radius:999px;padding:3px 10px;white-space:nowrap;margin-left:6px}
+body.unlocked .lockTag{display:none}
+#pwMask{position:fixed;inset:0;background:rgba(23,50,78,.55);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+#pwMask.on{display:flex}
+#pwBox{background:#fff;border-radius:16px;padding:24px;width:100%;max-width:320px;text-align:center}
+#pwBox h3{margin:0 0 6px;font-size:20px}
+#pwBox p{margin:0 0 12px;color:var(--sub);font-size:15px}
+#pwIn{width:100%;font-size:32px;letter-spacing:.4em;text-align:center;padding:8px;border:2px solid var(--line);border-radius:10px;font-family:inherit}
+#pwErr{color:var(--red);font-weight:bold;min-height:1.4em;margin:8px 0 0;font-size:15px}
+#pwBox .row2{display:flex;gap:8px;margin-top:10px}
+#pwBox .row2 button{flex:1}
+.set label{display:inline-flex;align-items:center;gap:6px;margin:4px 14px 4px 0;font-size:15px}
+.set select{font:inherit;font-size:15px;padding:4px}
+footer{text-align:center;font-size:12px;color:var(--sub);padding:8px 0 20px}
+
+/* ===== 配置 ===== */
+.layout{grid-template-areas:"map" "side" "rec"}
+.a-map{grid-area:map;min-width:0}.a-side{grid-area:side;min-width:0}.a-rec{grid-area:rec;min-width:0}
+@media(min-width:1000px){.layout{grid-template-areas:"map side" "rec side";grid-template-rows:auto 1fr;align-items:start}}
+.layout>.a-rec{margin-bottom:0}
+.a-map .card{margin-bottom:0}
+/* ===== 注目する物差し ===== */
+.focusBox{margin:10px 0 4px;padding:10px;border-radius:12px;background:#EEF6F5;border:1px solid #CFE5E3}
+.focusBox .fl{font-weight:bold;font-size:15px;margin-bottom:6px}
+.focusBox .fl small{font-weight:normal;color:var(--sub);font-size:13px}
+.seg.wrap{display:flex;flex-wrap:wrap;border:0;gap:6px;overflow:visible}
+.seg.wrap button{border:2px solid var(--line);border-radius:999px;background:#fff;min-height:40px;padding:6px 14px}
+.seg.wrap button+button{border-left:2px solid var(--line)}
+.seg.wrap button.on{background:var(--teal);border-color:var(--teal);color:#fff}
+.seg button{min-height:42px}
+.met{position:relative}
+.met .dir{font-size:12px;color:var(--sub);margin-left:4px;white-space:nowrap}
+.met.focus{border:3px solid var(--teal);background:#F3FAF9}
+.met.focus::after{content:"注目";position:absolute;top:-10px;right:10px;background:var(--teal);color:#fff;font-size:12px;font-weight:bold;border-radius:999px;padding:1px 10px}
+.met .gapline{margin-top:6px;font-size:13px;color:var(--sub);border-top:1px dashed var(--line);padding-top:4px}
+.met .gapline b{font-size:18px;color:var(--navy)}
+.met .overline{margin-top:4px;font-size:13px;color:var(--sub);line-height:1.4}
+.met .overline b{color:#A8322A;font-size:16px}
+#recTbl td .sub{display:block;font-size:11px;font-weight:normal;color:#A8322A;line-height:1.2}
+.metrics.flash .met{animation:flash .6s ease}
+@keyframes flash{0%{background:#FFF4DC}100%{background:#fff}}
+/* ===== 記録の表 ===== */
+.rechead{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between}
+.rechead h2{margin:0}
+.rectools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.seg.small button{font-size:14px;padding:6px 10px;min-height:38px}
+#clearRec.armed{border-color:var(--red);color:#fff;background:var(--red);font-weight:bold}
+.legend{font-size:13px;color:var(--sub);margin:8px 0 6px;display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center}
+.legend .sw{display:inline-block;width:46px;height:12px;border-radius:3px;vertical-align:middle;margin:0 4px;background:linear-gradient(90deg,rgba(14,124,123,.06),rgba(14,124,123,.55))}
+.tblwrap{overflow:auto;max-height:430px;border:1px solid var(--line);border-radius:10px;-webkit-overflow-scrolling:touch}
+#recTbl{border-collapse:separate;border-spacing:0;font-size:14px;min-width:100%}
+#recTbl th,#recTbl td{border:0;border-bottom:1px solid #E6EBF0;padding:6px 4px;white-space:nowrap}
+#recTbl thead th{position:sticky;background:#F1F4F7;color:var(--navy);font-size:13px;line-height:1.3;z-index:2}
+#recTbl thead tr:first-child th{top:0;height:30px;font-size:12px;letter-spacing:.05em}
+#recTbl thead tr:nth-child(2) th{top:30px;cursor:pointer}
+#recTbl thead tr:nth-child(2) th .u{display:block;font-weight:normal;font-size:11px;color:var(--sub)}
+#recTbl th.g-all{background:#E3EAF2}
+#recTbl th.g-d{background:#EFE9F5}
+#recTbl th.g-w{background:#F8E6E3}
+#recTbl th.d-center{background:#F6E3C8}#recTbl th.d-old{background:#E7DDF2}#recTbl th.d-east{background:#D9EEDB}
+#recTbl th.sorted{box-shadow:inset 0 -3px 0 var(--navy)}
+#recTbl th.focus{background:var(--teal)!important;color:#fff}
+#recTbl th.focus .u{color:#DDF0EF}
+#recTbl td.num{text-align:right;font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+#recTbl th.num{text-align:right}
+#recTbl td.fcell{font-weight:bold}
+#recTbl td .star{color:#B26B00;font-size:13px;margin-right:2px}
+#recTbl tbody tr:nth-child(even) td{background-color:#FAFBFC}
+#recTbl .stick1{position:sticky;left:0;z-index:1;background:#fff;text-align:right;color:var(--sub);min-width:34px;width:34px}
+#recTbl .stick2{position:sticky;left:34px;z-index:1;background:#fff;text-align:left;box-shadow:2px 0 0 #E6EBF0}
+#recTbl thead .stick1,#recTbl thead .stick2{z-index:3;background:#F1F4F7}
+#recTbl tbody tr:nth-child(even) .stick1,#recTbl tbody tr:nth-child(even) .stick2{background:#FAFBFC}
+#recTbl tr.latest td{background-color:#FFF7E6!important}
+#recTbl tr.latest .stick1{box-shadow:inset 4px 0 0 var(--amber)}
+.newtag{display:inline-block;font-size:11px;background:var(--amber);color:#fff;border-radius:999px;padding:0 6px;margin-right:4px;font-weight:bold}
+.stc{display:inline-block;min-width:22px;text-align:center;border-radius:5px;background:var(--red);color:#fff;font-weight:bold;font-size:13px;padding:0 4px;margin-right:3px}
+.stc.tmp{background:var(--amber)}
+.stc.none{background:#fff;color:var(--sub);border:1px dashed #9AA7B4}
+.plus{color:var(--sub);margin:0 3px;font-size:13px}
+.daypill{display:inline-block;font-size:12px;border-radius:999px;padding:1px 8px;background:#E9EEF3;color:var(--navy)}
+.daypill.short{background:#fff;border:1px dashed #9AA7B4;color:var(--sub)}
+.delbtn{font:inherit;font-size:16px;line-height:1;border:1px solid var(--line);background:#fff;color:var(--sub);border-radius:8px;width:30px;height:30px;cursor:pointer}
+.place{display:flex;flex-direction:column;gap:3px;align-items:flex-start}
+.place .chips{white-space:nowrap}
+.empty{color:var(--sub);padding:14px;text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <h1>救急車をどこに置く？</h1>
+  <p>川辺市（架空の町）の救急車の置き場所を、シミュレーションで考えます</p>
+</header>
+<main>
+
+<div class="steps" id="steps">
+  <button data-s="1" class="on">① 通報の場所を調べる<small>救急車1台で試す</small></button>
+  <button data-s="2">② 2台を置く<small>普段の1日</small><span class="lk">🔒 先生用</span></button>
+  <button data-s="3">③ 夏：臨時の3台目を置く<small>熱中症で通報が増える</small><span class="lk">🔒 先生用</span></button>
+</div>
+
+<div class="layout">
+  <div class="a-map">
+    <div class="card mapcard">
+      <svg id="map" viewBox="0 0 820 620" role="img" aria-label="川辺市の地図。中心部、お年寄りが多い地区、川向こうの住宅地があり、川には橋が1本だけ架かっている。消防署の候補地がAからFまで6か所ある"></svg>
+      <div id="playBar">
+        <span id="clock">0:00</span>
+        <button class="ghost" id="playPause">一時停止</button>
+        <span class="seg" id="speedSeg"><button data-v="20">遅く</button><button data-v="40" class="on">普通</button><button data-v="90">速く</button></span>
+        <button class="ghost" id="playClose">再生を終える</button>
+        <span id="playStat"></span>
+      </div>
+      <p class="howto" id="howto">候補地（A〜F）をタップして選びます。地図上の道をタップすると、そこで通報があったときに救急車が走る道筋と時間が出ます。</p>
+    </div>
+  </div>
+  <div class="a-side">
+    <div class="card">
+      <h2 id="stepTitle">① 通報の場所を調べる</h2>
+      <p class="msg" id="stepLead"></p>
+      <div class="sel" id="selBox"></div>
+      <div class="row">
+        <span>何日分？</span>
+        <span class="seg" id="daysSeg"><button data-v="1" class="on">1日</button><button data-v="7">1週間</button><button data-v="30">1か月</button><button data-v="365">1年</button></span>
+      </div>
+      <div class="row">
+        <button class="main" id="runBtn">シミュレーションする</button>
+        <button class="ghost" id="playBtn">1日を再生する</button>
+        <button class="ghost" id="clearDots">通報の点を消す</button>
+      </div>
+      <p class="msg" id="runMsg" aria-live="polite"></p>
+      <div class="focusBox" id="focusBox">
+        <div class="fl">注目する物差し<small>（班で選んだもの）</small></div>
+        <div class="seg wrap" id="focusSeg">
+          <button data-f="avg">平均</button><button data-f="max" id="focusMaxBtn">一番遅い</button><button data-f="within" id="focusWithinBtn">10分以内</button><button data-f="gap">地区の差</button><button data-f="waited">待たされた</button>
+        </div>
+      </div>
+      <div class="metrics" id="metrics"></div>
+    </div>
+
+    <div class="card" id="dCard">
+      <h3>地区ごとの様子</h3>
+      <table class="dtbl" id="dTbl"></table>
+      <p class="note" id="dNote"></p>
+    </div>
+
+    <div class="card">
+      <details id="modelBox">
+        <summary>このシミュレーションの決まり（モデル）</summary>
+        <div class="model">
+          <p style="margin:8px 0 2px"><b>入れたもの</b></p>
+          <ul>
+            <li>救急車は道路に沿って走る。1区画を走るのに<b>1分</b>かかる。川は、橋のある1か所でしか渡れない</li>
+            <li>通報を受けてから出発するまでに<b>2分</b>かかる</li>
+            <li>現場に着いてから、処置をして病院に運び、引き継ぐまでに<b>35分</b>かかる。その後、消防署に戻る</li>
+            <li>空いている救急車のうち、一番近いものが向かう。全部が出動中なら、一番早く着ける救急車が戻ってから向かう</li>
+            <li>通報は、地区ごとの起きやすさに従って、ランダムに起きる</li>
+          </ul>
+          <p style="margin:8px 0 2px"><b>省いたもの</b></p>
+          <ul>
+            <li>渋滞、信号、天気</li>
+            <li>時間帯による通報の数の違い（昼も夜も同じ）</li>
+            <li>病院の場所（どこで通報があっても、病院までの時間は同じとする）</li>
+            <li>隣の町からの応援</li>
+          </ul>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <div class="a-rec card" id="recCard">
+    <div class="rechead">
+      <h2>記録</h2>
+      <div class="rectools">
+        <span class="seg small" id="filterSeg"><button data-v="0" class="on">全て</button><button data-v="1">1日</button><button data-v="7">1週間</button><button data-v="30">1か月</button><button data-v="365">1年</button></span>
+        <button class="ghost" id="clearRec">全部消す</button>
+      </div>
+    </div>
+    <p class="legend" id="recLegend"></p>
+    <div class="tblwrap" id="tblwrap"><table id="recTbl"></table></div>
+    <p class="note" id="recNote">1日や1週間の結果は、試すたびに大きく変わります。比べるときは、上の「全て」の横のボタンで日数を揃えましょう。見出しをタップすると、その値で並べ替えます。</p>
+  </div>
+</div>
+
+
+<div class="card">
+  <details id="setBox">
+    <summary>設定（先生用）</summary>
+    <div class="set">
+      <p style="margin:10px 0 4px"><b>表示する物差し</b></p>
+      <label><input type="checkbox" data-m="avg" checked>平均の到着時間</label>
+      <label><input type="checkbox" data-m="max" checked><span id="maxLbl">一番遅かった時間</span></label>
+      <label><input type="checkbox" data-m="within" checked>○分以内に着いた割合</label>
+      <label><input type="checkbox" data-m="dist" checked>地区ごとの平均と地区の差</label>
+      <label><input type="checkbox" data-m="waited" checked>待たされた通報の割合</label>
+      <p style="margin:10px 0 4px"><b>細かい設定</b></p>
+      <label>「○分以内」の○
+        <select id="limSel"><option>6</option><option>8</option><option selected>10</option><option>12</option><option>15</option></select>分</label>
+      <label>「一番遅かった時間」を
+        <select id="maxMode"><option value="max" selected>そのまま表示</option><option value="p90">「遅かった1割の平均」に変える</option></select></label>
+      <label>夏の中心部の通報
+        <select id="sumSel"><option value="2">普段の2倍</option><option value="3" selected>普段の3倍</option><option value="4">普段の4倍</option></select></label>
+      <label>①で地区の表を
+        <select id="showD1"><option value="0" selected>見せない</option><option value="1">見せる</option></select></label>
+    </div>
+  </details>
+</div>
+
+<footer>架空の町を使った授業用のシミュレーションです。時間や件数は、実際の救急の目安（全国平均で通報から現場到着まで約10分）に近づけて設定しています。</footer>
+</main>
+
+<div id="pwMask" role="dialog" aria-modal="true" aria-labelledby="pwT">
+  <div id="pwBox">
+    <h3 id="pwT">パスワード</h3>
+    <p>先生に教えてもらった4桁の数字を入れてください。</p>
+    <input id="pwIn" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" aria-label="4桁のパスワード">
+    <p id="pwErr" aria-live="polite"></p>
+    <div class="row2"><button class="ghost" id="pwCancel">閉じる</button><button class="main" id="pwOk">開く</button></div>
+  </div>
+</div>
+
+<script>
+// ===== 救急車シミュレーション：モデル本体 =====
+const W = 16, H = 11;               // 交差点の数（横・縦）
+const RIVER_X = 10;                 // x=10 と x=11 の間に川
+const BRIDGE_Y = 7;                 // 橋は y=7 の1本だけ
+const STEP = 1.0;                   // 1区画を走る時間（分）
+const PREP = 2;                     // 通報を受けてから出発まで（分）
+const CARE = 35;                    // 現場での処置と病院への搬送・引き継ぎ（分）
+
+// 地区（どの交差点がどの地区か）
+function districtOf(x, y) {
+  if (x > RIVER_X) return 'east';                       // 川向こうの住宅地
+  if (y <= 3 && x >= 1) return 'old';                   // お年寄りが多い地区
+  if (y >= 5 && x >= 3 && x <= 9) return 'center';      // 中心部
+  return null;                                          // 公園・畑など（住む人が少ない）
+}
+const DISTRICTS = {
+  center: { name: '中心部', pop: 14000, normal: 4, summer: 12 },
+  old:    { name: 'お年寄りが多い地区', pop: 5000, normal: 2, summer: 2 },
+  east:   { name: '川向こうの住宅地', pop: 6000, normal: 1.5, summer: 1.5 },
+};
+const DKEYS = ['center', 'old', 'east'];
+
+// 消防署の候補地
+const SITES = {
+  A: { x: 6, y: 7 },
+  B: { x: 4, y: 1 },
+  C: { x: 9, y: 4 },
+  D: { x: 10, y: 8 },
+  E: { x: 13, y: 3 },
+  F: { x: 1, y: 6 },
+};
+const SITE_KEYS = Object.keys(SITES);
+
+const nid = (x, y) => y * W + x;
+function neighbors(id) {
+  const x = id % W, y = Math.floor(id / W), r = [];
+  if (y > 0) r.push(nid(x, y - 1));
+  if (y < H - 1) r.push(nid(x, y + 1));
+  if (x > 0 && !(x - 1 === RIVER_X && y !== BRIDGE_Y)) r.push(nid(x - 1, y));
+  if (x < W - 1 && !(x === RIVER_X && y !== BRIDGE_Y)) r.push(nid(x + 1, y));
+  return r;
+}
+// 各候補地からの道のり（区画数）と道筋
+const BFS = {};
+for (const k of SITE_KEYS) {
+  const s = nid(SITES[k].x, SITES[k].y);
+  const dist = new Array(W * H).fill(-1), par = new Array(W * H).fill(-1);
+  dist[s] = 0; const q = [s];
+  while (q.length) { const u = q.shift(); for (const v of neighbors(u)) if (dist[v] < 0) { dist[v] = dist[u] + 1; par[v] = u; q.push(v); } }
+  BFS[k] = { dist, par };
+}
+function travel(site, node) { return BFS[site].dist[node] * STEP; }
+function pathTo(site, node) { const p = []; let u = node; while (u >= 0) { p.push(u); u = BFS[site].par[u]; } return p.reverse(); }
+
+// 地区ごとの交差点
+const DNODES = { center: [], old: [], east: [] };
+for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const d = districtOf(x, y); if (d) DNODES[d].push(nid(x, y)); }
+
+// 通報をつくる（1日あたりの件数の平均に従ってランダムに）
+function makeCalls(days, season, rnd) {
+  const calls = [];
+  for (const d of DKEYS) {
+    const rate = DISTRICTS[d][season] / 1440;          // 1分あたり
+    let t = 0;
+    for (;;) {
+      t += -Math.log(1 - rnd()) / rate;
+      if (t >= days * 1440) break;
+      const nodes = DNODES[d];
+      calls.push({ t, node: nodes[Math.floor(rnd() * nodes.length)], d });
+    }
+  }
+  calls.sort((a, b) => a.t - b.t);
+  return calls;
+}
+
+// 救急車を動かす
+// 空いている救急車のうち一番近いものが向かう。全部出動中なら、一番早く着ける救急車が戻ってから向かう。
+function simulate(sites, calls) {
+  const cars = sites.map(s => ({ site: s, freeAt: 0 }));
+  const out = [];
+  for (const c of calls) {
+    let best = null, bestArr = Infinity, anyFree = cars.some(k => k.freeAt <= c.t);
+    for (const k of cars) {
+      if (anyFree && k.freeAt > c.t) continue;
+      const start = Math.max(c.t, k.freeAt);
+      const arr = start + PREP + travel(k.site, c.node);
+      if (arr < bestArr) { bestArr = arr; best = k; }
+    }
+    const start = Math.max(c.t, best.freeAt);
+    const tr = travel(best.site, c.node);
+    const arriveAt = start + PREP + tr;
+    best.freeAt = arriveAt + CARE + tr;
+    out.push({ ...c, site: best.site, start, arriveAt, resp: arriveAt - c.t, waited: start > c.t + 1e-9, tr });
+  }
+  return out;
+}
+
+function summarize(res, limit) {
+  const n = res.length;
+  if (!n) return null;
+  const s = { n, avg: 0, max: 0, within: 0, waited: 0, dist: {} };
+  for (const d of DKEYS) s.dist[d] = { sum: 0, n: 0 };
+  for (const r of res) {
+    s.avg += r.resp; if (r.resp > s.max) s.max = r.resp;
+    if (r.resp <= limit + 1e-9) s.within++;
+    if (r.waited) s.waited++;
+    s.dist[r.d].sum += r.resp; s.dist[r.d].n++;
+  }
+  s.avg /= n; s.within /= n; s.waited /= n;
+  for (const d of DKEYS) s.dist[d] = s.dist[d].n ? s.dist[d].sum / s.dist[d].n : null;
+  return s;
+}
+
+function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+if (typeof module !== 'undefined') module.exports = { W, H, RIVER_X, BRIDGE_Y, STEP, PREP, CARE, DISTRICTS, DKEYS, SITES, SITE_KEYS, BFS, travel, pathTo, DNODES, makeCalls, simulate, summarize, mulberry32, districtOf, nid };
+
+</script>
+<script>
+// ===== 画面 =====
+const $ = id => document.getElementById(id);
+const SVGNS = 'http://www.w3.org/2000/svg';
+const CELL = 50, OX = 35, OY = 35;
+const px = x => OX + x * CELL, py = y => OY + y * CELL;
+const nx = id => id % W, ny = id => Math.floor(id / W);
+const DCOL = { center: '#EFDFC4', old: '#E4DCEE', east: '#D8E8DA' };
+const DSHORT = { center: '中心部', old: 'お年寄りの地区', east: '川向こう' };
+const CARCOL = ['#C44536', '#17324E', '#C8851A'];
+
+const state = {
+  step: 1, days: 1,
+  sel1: [], sel2: [], extra: null,
+  limit: 10, maxMode: 'max',
+  show: { avg: true, max: true, within: true, dist: true, waited: true },
+  records: [], sortKey: null, sortAsc: true,
+  last: null,
+};
+const NORMAL_CENTER = DISTRICTS.center.normal;
+
+function el(tag, attrs, parent) {
+  const e = document.createElementNS(SVGNS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+
+// ----- 地図を描く -----
+const map = $('map');
+let gDots, gRoute, gSites, gPlay;
+function drawMap() {
+  map.innerHTML = '';
+  const g0 = el('g', {}, map);
+  el('rect', { x: 0, y: 0, width: 820, height: 620, fill: '#F3F1EC' }, g0);
+  // 街区（建物の並び）
+  const rnd = mulberry32(11);
+  const MAIN_Y = [BRIDGE_Y, 4], MAIN_X = [6];
+  for (let y = 0; y < H - 1; y++) for (let x = 0; x < W - 1; x++) {
+    if (x === RIVER_X) continue;
+    const d0 = districtOf(x, y), d = d0 && districtOf(x + 1, y + 1) === d0 && districtOf(x + 1, y) === d0 && districtOf(x, y + 1) === d0 ? d0 : null;
+    const bx = px(x) + 6, by = py(y) + 6, bw = CELL - 12;
+    if (!d) {
+      const park = (x >= 3 && x <= 9 && y === 4) || (x === 10);
+      el('rect', { x: bx, y: by, width: bw, height: bw, rx: 2, fill: park ? '#DCE6D2' : '#E9EBDD' }, g0);
+      if (!park) for (let k = 1; k < 4; k++) el('line', { x1: bx + 3, y1: by + k * bw / 4, x2: bx + bw - 3, y2: by + k * bw / 4, stroke: '#D8DBC6', 'stroke-width': 1 }, g0);
+      continue;
+    }
+    el('rect', { x: bx, y: by, width: bw, height: bw, rx: 2, fill: '#EAE6DE' }, g0);
+    if (d === 'center') {
+      // 中心部：大きめの建物が隙間なく並ぶ
+      const cut = 0.35 + rnd() * 0.3;
+      el('rect', { x: bx + 2, y: by + 2, width: bw * cut - 3, height: bw - 4, fill: '#D3CCBF', stroke: '#BDB4A5', 'stroke-width': .8 }, g0);
+      el('rect', { x: bx + bw * cut + 1, y: by + 2, width: bw * (1 - cut) - 3, height: bw / 2 - 3, fill: '#D8D1C5', stroke: '#BDB4A5', 'stroke-width': .8 }, g0);
+      el('rect', { x: bx + bw * cut + 1, y: by + bw / 2 + 1, width: bw * (1 - cut) - 3, height: bw / 2 - 3, fill: '#CFC7B9', stroke: '#BDB4A5', 'stroke-width': .8 }, g0);
+    } else {
+      // 住宅地：小さな建物がまばらに並ぶ
+      for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) {
+        if (rnd() < 0.18) continue;
+        const s = 10 + rnd() * 4;
+        el('rect', { x: bx + 3 + i * 19 + rnd() * 3, y: by + 3 + j * 19 + rnd() * 3, width: s, height: s - 2, fill: '#DDD7CC', stroke: '#C6BEB0', 'stroke-width': .8 }, g0);
+      }
+    }
+  }
+  // 地区の範囲（薄い色と点線）
+  const gZ = el('g', { 'pointer-events': 'none' }, map);
+  const zone = (x0, y0, w, h, d) => el('rect', { x: px(x0), y: py(y0), width: CELL * w, height: CELL * h, rx: 10, fill: DCOL[d], 'fill-opacity': .42, stroke: ZLINE[d], 'stroke-width': 1.6, 'stroke-dasharray': '6 4' }, gZ);
+  zone(0.6, -0.45, 9.8, 3.9, 'old');
+  zone(2.6, 4.55, 6.8, 5.9, 'center');
+  zone(11 - 0.4, -0.45, 4.85, 10.9, 'east');
+  // 道路（細い道 → 幹線道路の順に重ねる）
+  const gR = el('g', {}, map);
+  const seg = (x1, y1, x2, y2, w, col) => el('line', { x1, y1, x2, y2, stroke: col, 'stroke-width': w, 'stroke-linecap': 'round' }, gR);
+  const roads = [];
+  for (let y = 0; y < H; y++) { roads.push([px(0), py(y), px(RIVER_X), py(y), MAIN_Y.includes(y)]); roads.push([px(RIVER_X + 1), py(y), px(W - 1), py(y), y === BRIDGE_Y]); }
+  for (let x = 0; x < W; x++) roads.push([px(x), py(0), px(x), py(H - 1), MAIN_X.includes(x)]);
+  for (const r of roads) seg(r[0], r[1], r[2], r[3], r[4] ? 13 : 9, r[4] ? '#E1CF9C' : '#DCD7CD');
+  for (const r of roads) seg(r[0], r[1], r[2], r[3], r[4] ? 10 : 6.5, r[4] ? '#FBEFC8' : '#FFFFFF');
+  // 川（ゆるやかに曲がる）
+  const rx0 = px(RIVER_X) + 10, rx1 = px(RIVER_X + 1) - 10;
+  let L = `M${rx0} -5`, R = '';
+  const pts = [];
+  for (let yy = -5; yy <= 575; yy += 20) pts.push([yy, Math.sin(yy / 70) * 3]);
+  L = 'M' + pts.map(([yy, o]) => `${rx0 + o} ${yy}`).join(' L');
+  R = pts.slice().reverse().map(([yy, o]) => `${rx1 + o} ${yy}`).join(' L');
+  el('path', { d: `${L} L${R} Z`, fill: '#AFD1E3', stroke: '#8EBBD3', 'stroke-width': 1.2 }, gR);
+  // 橋
+  el('rect', { x: px(RIVER_X) - 4, y: py(BRIDGE_Y) - 8, width: CELL + 8, height: 16, fill: '#FBEFC8', stroke: '#8F877A', 'stroke-width': 1.5 }, gR);
+  el('line', { x1: px(RIVER_X) + 6, y1: py(BRIDGE_Y) - 10, x2: px(RIVER_X + 1) - 6, y2: py(BRIDGE_Y) - 10, stroke: '#8F877A', 'stroke-width': 1.5 }, gR);
+  el('line', { x1: px(RIVER_X) + 6, y1: py(BRIDGE_Y) + 10, x2: px(RIVER_X + 1) - 6, y2: py(BRIDGE_Y) + 10, stroke: '#8F877A', 'stroke-width': 1.5 }, gR);
+  // 文字
+  const gL = el('g', { 'pointer-events': 'none' }, map);
+  zoneLabel(gL, px(5.5), py(-0.45) + 5, 'お年寄りが多い地区', ZLINE.old);
+  zoneLabel(gL, px(6), py(10.45) + 5, '中心部', ZLINE.center);
+  zoneLabel(gL, px(13), py(10.45) + 5, '川向こうの住宅地', ZLINE.east);
+  label(gL, px(RIVER_X + 0.5), py(2.5), '川', '#4D7F9C', 15);
+  label(gL, px(RIVER_X + 0.5), py(BRIDGE_Y) - 17, '橋（1本だけ）', '#5E574C', 12);
+  label(gL, px(1), py(5.5) - 4, '公園・畑', '#6B7A55', 12);
+  // 方位と縮尺
+  const gC = el('g', { 'pointer-events': 'none' }, map);
+  el('rect', { x: 10, y: 572, width: 800, height: 40, rx: 8, fill: '#FFFFFF', stroke: '#DCD7CD' }, gC);
+  el('path', { d: 'M38 604 L46 580 L54 604 L46 598 Z', fill: '#3C4A5A' }, gC);
+  label(gC, 66, 598, 'N', '#3C4A5A', 13);
+  el('line', { x1: 96, y1: 596, x2: 96 + CELL, y2: 596, stroke: '#3C4A5A', 'stroke-width': 3 }, gC);
+  el('line', { x1: 96, y1: 590, x2: 96, y2: 600, stroke: '#3C4A5A', 'stroke-width': 2 }, gC);
+  el('line', { x1: 96 + CELL, y1: 590, x2: 96 + CELL, y2: 600, stroke: '#3C4A5A', 'stroke-width': 2 }, gC);
+  const st = el('text', { x: 154, y: 598, 'font-size': 14, fill: '#3C4A5A' }, gC); st.textContent = '約500 m（救急車で約1分）';
+  // 凡例
+  const lg = (x, draw, t) => { draw(x); const e = el('text', { x: x + 16, y: 598, 'font-size': 14, fill: '#3C4A5A' }, gC); e.textContent = t; };
+  lg(366, x => { el('circle', { cx: x + 4, cy: 593, r: 7, fill: '#fff', stroke: '#6A7480', 'stroke-width': 1.5 }, gC); }, '消防署の候補地');
+  lg(506, x => { el('circle', { cx: x + 4, cy: 593, r: 7, fill: '#A8322A' }, gC); }, '救急車を置いた場所');
+  lg(680, x => { el('line', { x1: x - 6, y1: 593, x2: x + 12, y2: 593, stroke: '#E1CF9C', 'stroke-width': 7 }, gC); el('line', { x1: x - 6, y1: 593, x2: x + 12, y2: 593, stroke: '#FBEFC8', 'stroke-width': 5 }, gC); }, '幹線道路');
+  gRoute = el('g', { 'pointer-events': 'none' }, map);
+  gDots = el('g', { 'pointer-events': 'none' }, map);
+  gSites = el('g', {}, map);
+  gPlay = el('g', { 'pointer-events': 'none' }, map);
+  drawSites();
+}
+const ZLINE = { center: '#9A7B4F', old: '#7E6E9C', east: '#5F8A68' };
+function zoneLabel(g, x, y, t, col) {
+  const bg = el('rect', { y: y - 16, height: 23, rx: 11.5, fill: '#FFFFFF', stroke: col, 'stroke-width': 1.2 }, g);
+  const e = el('text', { x, y, 'text-anchor': 'middle', 'font-size': 14, 'font-weight': 'bold', 'letter-spacing': '.08em', fill: col }, g);
+  e.textContent = t;
+  const w = (e.getComputedTextLength && e.getComputedTextLength()) || t.length * 15;
+  bg.setAttribute('x', x - w / 2 - 12); bg.setAttribute('width', w + 24);
+}
+function label(g, x, y, t, col, size) {
+  const e = el('text', { x, y, 'text-anchor': 'middle', 'font-size': size || 14, fill: col, stroke: '#F3F1EC', 'stroke-width': 3, 'paint-order': 'stroke' }, g);
+  e.textContent = t;
+}
+function drawSites() {
+  gSites.innerHTML = '';
+  const { base, tmp } = currentStations();
+  for (const k of SITE_KEYS) {
+    const s = SITES[k], cx = px(s.x), cy = py(s.y);
+    const g = el('g', { class: 'site', 'data-k': k, role: 'button', 'aria-label': '候補地' + k }, gSites);
+    el('circle', { cx, cy, r: 24, fill: 'transparent' }, g);          // タップしやすくするための見えない円
+    const isBase = base.includes(k), isTmp = tmp === k;
+    if (isBase || isTmp) {
+      const col = isTmp ? '#B8740F' : '#A8322A';
+      el('circle', { cx, cy, r: 21, fill: 'none', stroke: col, 'stroke-width': 2, opacity: .45 }, g);
+      el('circle', { cx, cy, r: 16, fill: col, stroke: '#fff', 'stroke-width': 2.5 }, g);
+      const t = el('text', { x: cx, y: cy + 6, 'text-anchor': 'middle', 'font-size': 17, 'font-weight': 'bold', fill: '#fff' }, g);
+      t.textContent = k;
+    } else {
+      el('circle', { cx, cy, r: 15, fill: '#FFFFFF', stroke: '#6A7480', 'stroke-width': 2 }, g);
+      const t = el('text', { x: cx, y: cy + 5.5, 'text-anchor': 'middle', 'font-size': 16, 'font-weight': 'bold', fill: '#3C4A5A' }, g);
+      t.textContent = k;
+    }
+  }
+}
+
+// ----- 選んでいる消防署 -----
+function currentStations() {
+  if (state.step === 1) return { base: state.sel1, tmp: null };
+  if (state.step === 2) return { base: state.sel2, tmp: null };
+  return { base: state.sel2, tmp: state.extra };
+}
+function activeSites() { const c = currentStations(); return c.tmp ? [...c.base, c.tmp] : [...c.base]; }
+function ready() {
+  if (state.step === 1) return state.sel1.length === 1;
+  return state.sel2.length === 2;
+}
+function season() { return state.step === 3 ? 'summer' : 'normal'; }
+
+map.addEventListener('click', e => {
+  if (playing) return;
+  const g = e.target.closest('.site');
+  if (g) { pickSite(g.getAttribute('data-k')); return; }
+  const pt = map.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+  const p = pt.matrixTransform(map.getScreenCTM().inverse());
+  const x = Math.round((p.x - OX) / CELL), y = Math.round((p.y - OY) / CELL);
+  if (x < 0 || y < 0 || x >= W || y >= H) return;
+  showRoute(nid(x, y));
+});
+function pickSite(k) {
+  gRoute.innerHTML = '';
+  if (state.step === 1) {
+    state.sel1 = state.sel1[0] === k ? [] : [k];
+  } else if (state.step === 2) {
+    const i = state.sel2.indexOf(k);
+    if (i >= 0) state.sel2.splice(i, 1);
+    else if (state.sel2.length < 2) state.sel2.push(k);
+    else { flash('2か所まで選べます。選び直すときは、選んだ消防署をもう一度タップして外します。'); return; }
+  } else {
+    if (state.sel2.length < 2) {
+      if (!state.sel2.includes(k)) state.sel2.push(k); else state.sel2.splice(state.sel2.indexOf(k), 1);
+    } else if (state.sel2.includes(k)) {
+      flash('常駐の2台の場所は、②で選んだ場所です。変えるときは、②に戻って選び直してください。'); return;
+    } else {
+      state.extra = state.extra === k ? null : k;
+    }
+  }
+  refresh();
+}
+function flash(t) { $('runMsg').textContent = t; $('runMsg').className = 'msg warn'; }
+
+function showRoute(node) {
+  gRoute.innerHTML = '';
+  const sites = activeSites();
+  if (!sites.length) { flash('先に、消防署の場所を選んでください。'); return; }
+  let best = null;
+  for (const s of sites) { const t = travel(s, node); if (!best || t < best.t) best = { s, t }; }
+  const path = pathTo(best.s, node);
+  el('polyline', { points: path.map(n => px(nx(n)) + ',' + py(ny(n))).join(' '), fill: 'none', stroke: '#0E7C7B', 'stroke-width': 5, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', opacity: .9 }, gRoute);
+  el('circle', { cx: px(nx(node)), cy: py(ny(node)), r: 8, fill: '#A8322A', stroke: '#fff', 'stroke-width': 2.5 }, gRoute);
+  const total = PREP + best.t;
+  const lx = Math.min(Math.max(px(nx(node)), 110), 710), ly = py(ny(node)) < 70 ? py(ny(node)) + 40 : py(ny(node)) - 22;
+  const bg = el('rect', { x: lx - 100, y: ly - 22, width: 200, height: 32, rx: 8, fill: '#17324E', opacity: .92 }, gRoute);
+  const t = el('text', { x: lx, y: ly, 'text-anchor': 'middle', 'font-size': 16, 'font-weight': 'bold', fill: '#fff' }, gRoute);
+  t.textContent = `${best.s}から ${fmt(total)}分（準備2分＋道のり${fmt(best.t)}分）`;
+  const w = t.getComputedTextLength ? t.getComputedTextLength() : 180;
+  const cx = Math.min(Math.max(lx, w / 2 + 16), 820 - w / 2 - 16);
+  t.setAttribute('x', cx);
+  bg.setAttribute('width', w + 24); bg.setAttribute('x', cx - w / 2 - 12);
+  $('runMsg').className = 'msg';
+  $('runMsg').textContent = `ここで通報があったら、空いていれば${best.s}の救急車が向かいます（他の救急車が出動中でないとき）。`;
+}
+const fmt = v => (Math.round(v * 10) / 10).toFixed(1);
+
+// ----- 場面の切り替え -----
+const STEP_TEXT = {
+  1: ['① 通報の場所を調べる', '救急車を1台だけ置いて試します。候補地を1か所選んで、シミュレーションしてみましょう。通報が起きた場所に点が残ります。'],
+  2: ['② 2台を置く（普段）', 'あなたは市の消防局の計画担当です。救急車2台を、候補地のどこに置くか市長に提案します。選んだ物差しで比べて決めましょう。'],
+  3: ['③ 夏：臨時の3台目を置く', '夏になり、中心部で熱中症の通報が増えました。常駐の2台（②で選んだ場所）はそのままで、夏の間だけ、残りの候補地のどこかに臨時の救急車を1台置きます。'],
+};
+document.querySelectorAll('#steps button').forEach(b => b.addEventListener('click', () => {
+  const s = +b.dataset.s;
+  if (s > 1 && !unlocked) { askPw(() => setStep(s)); return; }
+  setStep(s);
+}));
+function setStep(s) {
+  stopPlay();
+  state.step = s; state.last = null;
+  document.querySelectorAll('#steps button').forEach(b => b.classList.toggle('on', +b.dataset.s === s));
+  gRoute.innerHTML = ''; gDots.innerHTML = '';
+  $('metrics').innerHTML = '';
+  refresh();
+}
+function refresh() {
+  const [t, lead] = STEP_TEXT[state.step];
+  $('stepTitle').textContent = t; $('stepLead').textContent = lead;
+  // 選択の表示
+  const box = $('selBox'); box.innerHTML = '';
+  const c = currentStations();
+  const add = (txt, cls) => { const s = document.createElement('span'); s.className = 'chip ' + (cls || ''); s.textContent = txt; box.appendChild(s); };
+  if (state.step === 1) {
+    add(c.base.length ? '救急車：' + c.base[0] : '救急車：まだ選んでいません', c.base.length ? 'st' : '');
+  } else if (state.step === 2) {
+    add('救急車1：' + (c.base[0] || '未選択'), c.base[0] ? 'st' : '');
+    add('救急車2：' + (c.base[1] || '未選択'), c.base[1] ? 'st' : '');
+  } else {
+    add('常駐の2台：' + (c.base.length === 2 ? c.base.join('・') : '未選択'), c.base.length === 2 ? 'st' : '');
+    add('臨時の3台目：' + (c.tmp || 'なし'), c.tmp ? 'tmp' : '');
+  }
+  let hint = '';
+  if (state.step === 1 && !ready()) hint = '地図の候補地を1か所タップしてください。';
+  if (state.step === 2 && !ready()) hint = `地図の候補地を残り${2 - state.sel2.length}か所タップしてください。`;
+  if (state.step === 3 && state.sel2.length < 2) hint = '常駐の2台が決まっていません。先に2か所をタップしてください（②で選んだ場所がそのまま使われます）。';
+  else if (state.step === 3 && !state.extra) hint = '残りの候補地をタップすると、臨時の3台目を置けます。置かずに試すと、2台だけの夏の様子が分かります。';
+  $('runMsg').className = 'msg'; $('runMsg').textContent = hint;
+  $('runBtn').disabled = !ready(); $('playBtn').disabled = !ready();
+  $('clearDots').style.display = state.step === 1 ? '' : 'none';
+  drawSites(); drawDTable(); updateFocusUI(); drawRecords();
+}
+
+// ----- 地区の表 -----
+function drawDTable() {
+  const show = state.step > 1 || $('showD1').value === '1';
+  $('dCard').style.display = show ? '' : 'none';
+  if (!show) return;
+  const summer = state.step === 3;
+  let h = '<tr><th>地区</th><th>人口</th><th>1日の通報（平均）</th></tr>';
+  for (const d of DKEYS) {
+    const D = DISTRICTS[d], v = summer ? D.summer : D.normal;
+    const hot = summer && D.summer !== D.normal;
+    h += `<tr><td><span style="display:inline-block;width:12px;height:12px;border-radius:3px;background:${DCOL[d]};border:1px solid #9AA;margin-right:6px"></span>${D.name}</td><td>${D.pop.toLocaleString()}人</td><td class="${hot ? 'hot' : ''}">${v}件${hot ? '（普段は' + D.normal + '件）' : ''}</td></tr>`;
+  }
+  $('dTbl').innerHTML = h;
+  $('dNote').textContent = summer ? '夏は、中心部で熱中症の通報が増えます。' : '人口1000人当たりで比べると、お年寄りが多い地区で通報が起きやすくなっています。';
+}
+
+// ----- シミュレーション -----
+document.querySelectorAll('#daysSeg button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('#daysSeg button').forEach(x => x.classList.toggle('on', x === b));
+  state.days = +b.dataset.v;
+}));
+$('runBtn').addEventListener('click', () => {
+  if (!ready()) return;
+  stopPlay(); gRoute.innerHTML = '';
+  const sites = activeSites();
+  const calls = makeCalls(state.days, season(), Math.random);
+  const res = simulate(sites, calls);
+  const s = stats(res);
+  state.last = s;
+  showMetrics(s, true);
+  if (state.step === 1) drawDots(res);
+  const c = currentStations();
+  if (s.n) addRecord({ step: state.step, base: [...c.base], tmp: state.step === 3 ? (c.tmp || '') : null, days: state.days, ...s });
+  drawRecords();
+  $('runMsg').className = 'msg';
+  $('runMsg').textContent = s.n ? `${dayText(state.days)}で、通報は${s.n}件ありました。もう一度押すと、別の${dayText(state.days)}を試します。` : '';
+});
+const dayText = d => d === 1 ? '1日' : d === 7 ? '1週間' : d === 30 ? '1か月' : '1年';
+
+function stats(res) {
+  const s = summarize(res, state.limit);
+  if (!s) return { n: 0 };
+  const sorted = res.map(r => r.resp).sort((a, b) => b - a);
+  const k = Math.max(1, Math.round(sorted.length / 10));
+  s.p90 = sorted.slice(0, k).reduce((a, b) => a + b, 0) / k;
+  const dv = DKEYS.map(d => s.dist[d]).filter(v => v != null);
+  s.gap = dv.length === DKEYS.length ? Math.max(...dv) - Math.min(...dv) : null;   // 通報がなかった地区があるときは出さない
+  s.limit = state.limit;
+  s.overN = res.filter(r => r.resp > state.limit + 1e-9).length;   // 目標の時間を超えた件数
+  return s;
+}
+function maxName() { return state.maxMode === 'p90' ? '遅かった1割の平均' : '一番遅かった時間'; }
+
+// ----- 物差しの定義（表示・記録・注目で共通）-----
+const METRICS = {
+  avg:    { label: () => '平均の到着時間', short: () => '平均', unit: '分', better: 'low', v: r => r.avg, f: v => fmt(v), on: () => state.show.avg },
+  max:    { label: () => maxName(), short: () => state.maxMode === 'p90' ? '遅い1割' : '一番遅い', unit: '分', better: 'low', v: r => state.maxMode === 'p90' ? r.p90 : r.max, f: v => fmt(v), on: () => state.show.max },
+  within: { label: () => state.limit + '分以内に着いた割合', short: () => state.limit + '分以内', unit: '%', better: 'high', v: r => r.limit === state.limit ? r.within : null, f: v => v == null ? '－' : Math.round(v * 100), on: () => state.show.within },
+  gap:    { label: () => '地区の差（一番遅い地区と一番早い地区の差）', short: () => '地区の差', unit: '分', better: 'low', v: r => r.gap, f: v => v == null ? '－' : fmt(v), on: () => state.show.dist },
+  waited: { label: () => '待たされた通報の割合', short: () => '待たされた', unit: '%', better: 'low', v: r => r.waited, f: v => Math.round(v * 100), on: () => state.show.waited },
+};
+const dirText = m => METRICS[m].better === 'low' ? '短いほど良い' : '高いほど良い';
+const dirTextW = '少ないほど良い';
+
+function showMetrics(s, animate) {
+  const m = $('metrics');
+  if (!s) { m.innerHTML = ''; return; }
+  if (!s.n) { m.innerHTML = '<p class="msg">この期間は通報がありませんでした。もう一度試してください。</p>'; return; }
+  const F = state.focus;
+  const card = (key, k, v, unit, dir, extra) => `<div class="met ${F === key ? 'focus' : ''}" ${METRICS[key].on() ? '' : 'hidden'}><div class="k">${k}<span class="dir">（${dir}）</span></div><div class="v">${v}<small> ${unit}</small></div>${extra || ''}</div>`;
+  const dv = d => s.dist[d] == null ? '－' : fmt(s.dist[d]);
+  m.innerHTML =
+    card('avg', '平均の到着時間', fmt(s.avg), '分', '短いほど良い') +
+    card('max', maxName(), fmt(state.maxMode === 'p90' ? s.p90 : s.max), '分', '短いほど良い') +
+    card('within', `${s.limit}分以内に着いた割合`, Math.round(s.within * 100), '%', '高いほど良い', `<div class="overline">${s.limit}分を超えたのは <b>${s.overN.toLocaleString()}件</b>（${s.n.toLocaleString()}件中）</div>`) +
+    card('waited', '待たされた通報の割合', Math.round(s.waited * 100), '%', dirTextW, '<div class="note" style="line-height:1.3">全部の救急車が出動中だった通報</div>') +
+    `<div class="met wide ${F === 'gap' ? 'focus' : ''}" ${state.show.dist ? '' : 'hidden'}><div class="k">地区ごとの平均の到着時間<span class="dir">（短いほど良い）</span></div>
+      <div class="dist">${DKEYS.map(d => `<div><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${DCOL[d]};border:1px solid #9AA;margin-right:4px"></span>${DSHORT[d]}<b>${dv(d)}<small style="font-size:13px;font-weight:normal"> 分</small></b></div>`).join('')}</div>
+      <div class="gapline">地区の差（一番遅い地区 − 一番早い地区）：<b>${s.gap == null ? '－' : fmt(s.gap)}</b> 分（小さいほど公平）</div></div>`;
+  m.classList.remove('flash');
+  if (animate) { void m.offsetWidth; m.classList.add('flash'); clearTimeout(showMetrics.t); showMetrics.t = setTimeout(() => m.classList.remove('flash'), 700); }
+}
+function drawDots(res) {
+  for (const r of res.slice(-1500)) {
+    const j = () => (Math.random() - .5) * 26;
+    el('circle', { cx: px(nx(r.node)) + j(), cy: py(ny(r.node)) + j(), r: 4, fill: '#A8322A', opacity: .5 }, gDots);
+  }
+  const n = gDots.childNodes.length;
+  if (n > 3000) for (let i = 0; i < n - 3000; i++) gDots.removeChild(gDots.firstChild);
+}
+$('clearDots').addEventListener('click', () => { gDots.innerHTML = ''; });
+
+// ----- 注目する物差し -----
+state.focus = null;
+document.querySelectorAll('#focusSeg button').forEach(b => b.addEventListener('click', () => {
+  state.focus = state.focus === b.dataset.f ? null : b.dataset.f;
+  updateFocusUI();
+  if (state.last) showMetrics(state.last);
+  drawRecords();
+}));
+function updateFocusUI() {
+  document.querySelectorAll('#focusSeg button').forEach(b => {
+    b.classList.toggle('on', b.dataset.f === state.focus);
+    b.style.display = METRICS[b.dataset.f].on() ? '' : 'none';
+    b.textContent = METRICS[b.dataset.f].short();
+  });
+  if (state.focus && !METRICS[state.focus].on()) state.focus = null;
+  $('focusBox').style.display = state.step === 1 ? 'none' : '';
+}
+
+// ----- 記録 -----
+let recNo = 0, latestNo = 0, filterDays = 0;
+function addRecord(r) { r.no = ++recNo; latestNo = r.no; state.records.push(r); }
+document.querySelectorAll('#filterSeg button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('#filterSeg button').forEach(x => x.classList.toggle('on', x === b));
+  filterDays = +b.dataset.v; drawRecords();
+}));
+function placeHTML(r) {
+  const chips = r.base.map(k => `<span class="stc">${k}</span>`).join('');
+  if (r.tmp === null) return chips;
+  return chips + '<span class="plus">＋</span>' + (r.tmp ? `<span class="stc tmp">${r.tmp}</span>` : '<span class="stc none">なし</span>');
+}
+function drawRecords() {
+  const all = state.records.filter(r => r.step === state.step);
+  const rows = all.filter(r => !filterDays || r.days === filterDays);
+  const tbl = $('recTbl');
+  const F = state.focus;
+  // 凡例
+  $('recLegend').innerHTML = F
+    ? `<span>注目：<b>${METRICS[F].label()}</b>（${F === 'waited' ? dirTextW : dirText(F)}）</span><span>色が濃いほど良い<span class="sw"></span></span><span><span style="color:#B26B00">★</span> それぞれの列で一番良い記録</span>`
+    : '<span><span style="color:#B26B00">★</span> それぞれの列で一番良い記録</span><span>「注目する物差し」を選ぶと、その列が色の濃さで比べやすくなります。</span>';
+  if (!all.length) { tbl.innerHTML = '<tbody><tr><td class="empty">この場面では、まだ記録がありません。「シミュレーションする」を押すと、ここに結果が記録されます。</td></tr></tbody>'; return; }
+  if (!rows.length) { tbl.innerHTML = `<tbody><tr><td class="empty">${dayText(filterDays)}の記録はまだありません。</td></tr></tbody>`; return; }
+  // 並べ替え
+  const sk = state.sortKey || 'no';
+  if (!state.sortKey) state.sortAsc = false;
+  const val = (k, r) => k === 'no' ? r.no : k === 'center' || k === 'old' || k === 'east' ? r.dist[k] : METRICS[k] ? METRICS[k].v(r) : null;
+  if (sk) rows.sort((a, b) => { const x = val(sk, a), y = val(sk, b); if (x == null) return 1; if (y == null) return -1; return state.sortAsc ? x - y : y - x; });
+  // 表示どおりの値（四捨五入した値）で比べる。同じ表示の値は同じ順位として扱う
+  const unitOf = k => METRICS[k] ? METRICS[k].unit : '分';
+  const betterOf = k => METRICS[k] ? METRICS[k].better : 'low';
+  const shown = (k, v) => v == null ? null : unitOf(k) === '%' ? Math.round(v * 100) : Math.round(v * 10);
+  const bestOf = {};
+  for (const k of ['avg', 'max', 'within', 'center', 'old', 'east', 'gap', 'waited']) {
+    const vs = rows.map(r => shown(k, val(k, r))).filter(v => v != null);
+    bestOf[k] = vs.length > 1 && new Set(vs).size > 1 ? (betterOf(k) === 'low' ? Math.min(...vs) : Math.max(...vs)) : null;
+  }
+  // 注目の列の色（良いほど濃く）
+  let shade = () => '';
+  if (F) {
+    const vs = rows.map(r => shown(F, val(F, r))).filter(v => v != null);
+    if (vs.length) {
+      const lo = Math.min(...vs), hi = Math.max(...vs);
+      const good = betterOf(F) === 'low' ? lo : hi, bad = betterOf(F) === 'low' ? hi : lo;
+      shade = v => { const d = shown(F, v); if (d == null) return ''; const t = hi === lo ? 1 : (d - bad) / (good - bad); return `background-color:rgba(14,124,123,${(0.06 + 0.5 * t).toFixed(3)})`; };
+    }
+  }
+  const show = k => METRICS[k] ? METRICS[k].on() : state.show.dist;
+  const allCols = ['avg', 'max', 'within'].filter(show);
+  const dCols = state.show.dist ? ['center', 'old', 'east', 'gap'] : [];
+  const wCols = show('waited') ? ['waited'] : [];
+  const hdr = (k, name, unit, cls) => `<th data-k="${k}" class="num ${cls || ''} ${F === k ? 'focus' : ''} ${sk === k ? 'sorted' : ''}" title="タップで並べ替え">${name}${sk === k ? (state.sortAsc ? ' ▲' : ' ▼') : ''}<span class="u">${unit}</span></th>`;
+  const placeName = state.step === 1 ? '置き場所' : state.step === 2 ? '2台の場所' : '常駐の2台＋臨時';
+  let h = '<thead><tr>';
+  h += `<th class="stick1" rowspan="2" data-k="no" style="cursor:pointer;vertical-align:bottom">回${sk === 'no' ? (state.sortAsc ? ' ▲' : ' ▼') : ''}</th><th class="stick2" rowspan="2" style="vertical-align:bottom;text-align:left">${placeName}<span class="u" style="font-weight:normal;font-size:11px;color:var(--sub)">と日数</span></th>`;
+  if (allCols.length) h += `<th class="g-all" colspan="${allCols.length}">町全体</th>`;
+  if (dCols.length) h += `<th class="g-d" colspan="4">地区ごとの平均</th>`;
+  if (wCols.length) h += `<th class="g-w">出動の様子</th>`;
+  h += '<th rowspan="2"></th></tr><tr>';
+  for (const k of allCols) h += hdr(k, METRICS[k].short(), METRICS[k].unit, 'g-all');
+  if (dCols.length) { h += hdr('center', '中心部', '分', 'd-center') + hdr('old', 'お年寄り', '分', 'd-old') + hdr('east', '川向こう', '分', 'd-east') + hdr('gap', '地区の差', '分', 'g-d'); }
+  for (const k of wCols) h += hdr(k, METRICS[k].short(), METRICS[k].unit, 'g-w');
+  h += '</tr></thead><tbody>';
+  const cell = (k, v, txt) => {
+    const isF = F === k;
+    const star = bestOf[k] != null && shown(k, v) === bestOf[k] ? '<span class="star" aria-label="一番良い">★</span>' : '';
+    return `<td class="num ${isF ? 'fcell' : ''}" style="${isF ? shade(v) : ''}">${star}${txt}</td>`;
+  };
+  for (const r of rows) {
+    const latest = r.no === latestNo;
+    h += `<tr class="${latest ? 'latest' : ''}"><td class="stick1">${latest ? '<span class="newtag">最新</span>' : ''}${r.no}</td><td class="stick2"><div class="place"><span class="chips">${placeHTML(r)}</span><span class="daypill ${r.days < 30 ? 'short' : ''}">${dayText(r.days)}${r.days < 30 ? '・変動が大きい' : ''}</span></div></td>`;
+    for (const k of allCols) { const v = METRICS[k].v(r); h += cell(k, v, METRICS[k].f(v) + (k === 'within' && v != null ? `<span class="sub">超え${r.overN.toLocaleString()}件</span>` : '')); }
+    if (dCols.length) { for (const d of ['center', 'old', 'east']) h += cell(d, r.dist[d], r.dist[d] == null ? '－' : fmt(r.dist[d])); h += cell('gap', r.gap, METRICS.gap.f(r.gap)); }
+    for (const k of wCols) { const v = METRICS[k].v(r); h += cell(k, v, METRICS[k].f(v)); }
+    h += `<td><button class="delbtn" data-del="${r.no}" aria-label="${r.no}回目の記録を消す" title="この記録を消す">×</button></td></tr>`;
+  }
+  h += '</tbody>';
+  tbl.innerHTML = h;
+  tbl.querySelectorAll('th[data-k]').forEach(th => th.addEventListener('click', () => {
+    const k = th.dataset.k;
+    if (state.sortKey === k) state.sortAsc = !state.sortAsc;
+    else { state.sortKey = k; state.sortAsc = k === 'no' ? true : !(METRICS[k] && METRICS[k].better === 'high'); }
+    drawRecords();
+  }));
+  tbl.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => {
+    const no = +b.dataset.del; state.records = state.records.filter(r => r.no !== no); drawRecords();
+  }));
+}
+let clearTimer = 0;
+$('clearRec').addEventListener('click', () => {
+  const btn = $('clearRec');
+  if (!btn.classList.contains('armed')) {
+    if (!state.records.some(r => r.step === state.step)) return;
+    btn.classList.add('armed'); btn.textContent = 'もう一度押すと全部消えます';
+    clearTimeout(clearTimer); clearTimer = setTimeout(() => { btn.classList.remove('armed'); btn.textContent = '全部消す'; }, 3000);
+    return;
+  }
+  clearTimeout(clearTimer); btn.classList.remove('armed'); btn.textContent = '全部消す';
+  state.records = state.records.filter(r => r.step !== state.step);
+  drawRecords();
+});
+
+// ----- 1日を再生する -----
+let playing = false, playRaf = 0, playT = 0, playLast = 0, paused = false, speed = 40, playData = null;
+$('playBtn').addEventListener('click', startPlay);
+$('playClose').addEventListener('click', stopPlay);
+$('playPause').addEventListener('click', () => { paused = !paused; $('playPause').textContent = paused ? '再開' : '一時停止'; });
+document.querySelectorAll('#speedSeg button').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('#speedSeg button').forEach(x => x.classList.toggle('on', x === b)); speed = +b.dataset.v;
+}));
+function startPlay() {
+  if (!ready()) return;
+  stopPlay(); gRoute.innerHTML = '';
+  const sites = activeSites();
+  const res = simulate(sites, makeCalls(1, season(), Math.random));
+  const disp = res.map(r => ({ ...r, depart: r.start + PREP, careEnd: r.arriveAt + CARE, back: r.arriveAt + CARE + r.tr, path: pathTo(r.site, r.node) }));
+  gPlay.innerHTML = '';
+  const cars = sites.map((s, i) => {
+    const g = el('g', {}, gPlay);
+    el('circle', { r: 10, fill: '#fff', stroke: CARCOL[i], 'stroke-width': 3 }, g);
+    el('rect', { x: -1.5, y: -5.5, width: 3, height: 11, fill: CARCOL[i] }, g);
+    el('rect', { x: -5.5, y: -1.5, width: 11, height: 3, fill: CARCOL[i] }, g);
+    const tag = el('text', { y: 24, 'text-anchor': 'middle', 'font-size': 11, 'font-weight': 'bold', fill: '#3C4A5A', stroke: '#fff', 'stroke-width': 3, 'paint-order': 'stroke', opacity: 0 }, g);
+    tag.textContent = '処置・搬送中';
+    return { site: s, g, tag };
+  });
+  const callEls = disp.map(r => {
+    const g = el('g', { opacity: 0 }, gPlay);
+    const ring = el('circle', { cx: px(nx(r.node)), cy: py(ny(r.node)), r: 14, fill: 'none', stroke: '#C44536', 'stroke-width': 3 }, g);
+    const dot = el('circle', { cx: px(nx(r.node)), cy: py(ny(r.node)), r: 8, fill: '#C44536', stroke: '#fff', 'stroke-width': 2 }, g);
+    return { g, ring, dot };
+  });
+  playData = { disp, cars, callEls };
+  playing = true; paused = false; playT = 0; playLast = performance.now();
+  $('playPause').textContent = '一時停止';
+  $('playBar').classList.add('on');
+  $('howto').style.display = 'none';
+  $('runMsg').className = 'msg';
+  $('runMsg').textContent = '1日の救急車の動きを再生しています。赤い輪が大きく点滅している通報は、救急車が全部出動中で待たされています。点が濃い赤に変わった通報は、目標の時間を過ぎても救急車が着いていません。';
+  playRaf = requestAnimationFrame(tick);
+}
+function posOn(path, frac) {
+  if (path.length < 2) return [px(nx(path[0])), py(ny(path[0]))];
+  const f = Math.min(Math.max(frac, 0), 1) * (path.length - 1);
+  const i = Math.min(Math.floor(f), path.length - 2), r = f - i;
+  const a = path[i], b = path[i + 1];
+  return [px(nx(a)) + (px(nx(b)) - px(nx(a))) * r, py(ny(a)) + (py(ny(b)) - py(ny(a))) * r];
+}
+function tick(now) {
+  if (!playing) return;
+  const dt = (now - playLast) / 1000; playLast = now;
+  if (!paused) playT = Math.min(1440, playT + dt * speed);
+  const t = playT, { disp, cars, callEls } = playData;
+  // 救急車
+  cars.forEach((c, i) => {
+    const d = disp.find(r => r.site === c.site && r.start <= t && t < r.back);
+    let x = px(SITES[c.site].x), y = py(SITES[c.site].y) - 28, op = 1;
+    if (d) {
+      if (t < d.depart) { /* 準備中 */ }
+      else if (t < d.arriveAt) { [x, y] = posOn(d.path, d.tr ? (t - d.depart) / d.tr : 1); }
+      else if (t < d.careEnd) { [x, y] = posOn(d.path, 1); op = .5; }
+      else { [x, y] = posOn(d.path, 1 - (t - d.careEnd) / Math.max(d.tr, .01)); }
+    }
+    c.g.setAttribute('transform', `translate(${x},${y})`); c.g.setAttribute('opacity', op < 1 ? .75 : 1);
+    c.tag.setAttribute('opacity', op < 1 ? 1 : 0);
+  });
+  // 通報
+  let shown = 0, waiting = 0, sum = 0, done = 0, over = 0;
+  disp.forEach((r, i) => {
+    const e = callEls[i];
+    if (t < r.t || t >= r.careEnd) { e.g.setAttribute('opacity', 0); }
+    else {
+      e.g.setAttribute('opacity', 1);
+      const waitingNow = t < r.start;
+      if (t < r.arriveAt) {
+        e.dot.setAttribute('fill', t >= r.t + state.limit ? '#6E1A14' : '#C44536');
+        const pulse = waitingNow ? 16 + 8 * Math.abs(Math.sin(now / 160)) : 13;
+        e.ring.setAttribute('r', pulse); e.ring.setAttribute('stroke-width', waitingNow ? 4 : 2);
+        e.ring.setAttribute('opacity', 1);
+      } else { e.dot.setAttribute('fill', '#9AA7B4'); e.ring.setAttribute('opacity', 0); }
+    }
+    if (r.t <= t) { shown++; if (r.waited) waiting++; }
+    if (r.resp > state.limit + 1e-9 && t >= r.t + state.limit) over++;   // 目標の時間が過ぎた時点で数える
+    if (r.arriveAt <= t) { sum += r.resp; done++; }
+  });
+  const hh = Math.floor(t / 60), mm = Math.floor(t % 60);
+  $('clock').textContent = `${hh}:${String(mm).padStart(2, '0')}`;
+  $('playStat').innerHTML = `通報 ${shown}件　待たされた ${waiting}件　<b style="color:#A8322A">${state.limit}分を超えた ${over}件</b>　平均の到着 ${done ? fmt(sum / done) : '－'}分`;
+  if (t >= 1440) { $('playPause').textContent = '終わり'; paused = true; }
+  playRaf = requestAnimationFrame(tick);
+}
+function stopPlay() {
+  if (!playing) return;
+  playing = false; cancelAnimationFrame(playRaf);
+  gPlay.innerHTML = ''; $('playBar').classList.remove('on'); $('howto').style.display = '';
+  refresh();
+}
+
+// ----- 先生用の設定 -----
+document.querySelectorAll('.set input[data-m]').forEach(cb => cb.addEventListener('change', () => {
+  state.show[cb.dataset.m] = cb.checked; updateFocusUI(); if (state.last) showMetrics(state.last); drawRecords();
+}));
+$('limSel').addEventListener('change', () => {
+  state.limit = +$('limSel').value;
+  updateFocusUI();
+  if (state.last) { state.last = null; $('metrics').innerHTML = '<p class="msg">「○分以内」の○を変えました。もう一度シミュレーションしてください。記録の表では、前の○で調べた記録は「－」と表示します。</p>'; }
+  drawRecords();
+});
+$('maxMode').addEventListener('change', () => { state.maxMode = $('maxMode').value; $('maxLbl').textContent = maxName(); updateFocusUI(); if (state.last) showMetrics(state.last); drawRecords(); });
+$('sumSel').addEventListener('change', () => { DISTRICTS.center.summer = NORMAL_CENTER * +$('sumSel').value; drawDTable(); });
+$('showD1').addEventListener('change', drawDTable);
+DISTRICTS.center.summer = NORMAL_CENTER * 3;
+
+// ----- パスワード（②・③と先生用の設定）-----
+// 変えるときは PW_CODE を新しい4桁に書き換える
+const PW_CODE = '4826';
+let unlocked = false, afterPw = null;
+const setBox = $('setBox');
+{ const tag = document.createElement('span'); tag.className = 'lockTag'; tag.textContent = '🔒 先生用'; setBox.querySelector('summary').appendChild(tag); }
+setBox.querySelector('summary').addEventListener('click', e => {
+  if (unlocked || setBox.open) return;
+  e.preventDefault(); askPw(() => { setBox.open = true; });
+});
+function askPw(cb) { afterPw = cb; $('pwIn').value = ''; $('pwErr').textContent = ''; $('pwMask').classList.add('on'); setTimeout(() => $('pwIn').focus(), 50); }
+function hidePw() { $('pwMask').classList.remove('on'); }
+function tryPw() {
+  if ($('pwIn').value === PW_CODE) { unlocked = true; document.body.classList.add('unlocked'); hidePw(); if (afterPw) afterPw(); afterPw = null; }
+  else { $('pwErr').textContent = '番号が違います'; $('pwIn').value = ''; $('pwIn').focus(); }
+}
+$('pwIn').addEventListener('input', () => { const v = $('pwIn').value.replace(/[^0-9]/g, ''); $('pwIn').value = v; $('pwErr').textContent = ''; if (v.length === 4) tryPw(); });
+$('pwIn').addEventListener('keydown', e => { if (e.key === 'Enter') tryPw(); if (e.key === 'Escape') hidePw(); });
+$('pwOk').addEventListener('click', tryPw);
+$('pwCancel').addEventListener('click', hidePw);
+$('pwMask').addEventListener('click', e => { if (e.target === $('pwMask')) hidePw(); });
+
+drawMap();
+refresh();
+</script>
+</body>
+</html>
