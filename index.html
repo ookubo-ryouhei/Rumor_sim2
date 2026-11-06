@@ -1143,64 +1143,69 @@ refresh();
 // ===== AIによる提案のチェック（指摘は事前にAIで作成したもの）=====
 const AiReview = (function () {
   const dist = (a, b) => Math.abs(SITES[a].x - SITES[b].x) + Math.abs(SITES[a].y - SITES[b].y);
-  // ○＝今のアプリで確かめられる　△＝モデルを直せば確かめられる　×＝モデルの外
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  const pct = v => Math.round(v * 100);
+  const where = r => r.base.join('と') + (r.tmp ? '＋' + r.tmp : '');
+  // 置き場所ごとの指摘（アプリで確かめられる）
   const THIRD = {
-    A: '中心部の真ん中に3台目を置くと、常駐の2台との役割分担はどうなりますか？　中心部以外の地区の到着時間は、どう変わりましたか？',
-    B: '夏に増えたのは中心部の通報です。通報が増えていないお年寄りの地区に3台目を置くのはなぜですか？',
-    C: 'Cは中心部の北の端にあります。中心部の南側で通報があったとき、どの救急車が向かうことになりますか？',
+    A: '中心部の真ん中に3台目を置くと、常駐の2台との役割分担はどうなりますか？　中心部以外の地区の到着時間も、良くなっていますか？',
+    B: '夏に増えたのは中心部の通報です。通報が増えていないお年寄りの地区に3台目を置く理由を、数字で説明してもらえますか？',
+    C: 'Cは中心部の北の端にあります。中心部の南側で通報があったとき、実際にはどの救急車が向かっていますか？',
     D: 'Dは橋のすぐそばです。川向こうへは早く行けますが、中心部の西側の通報には間に合っていますか？',
-    E: 'Eの救急車が中心部へ行くには、毎回1本の橋を渡ります。夏に増えた中心部の通報に、それで間に合いますか？',
-    F: 'Fは町の西のはずれです。Fから中心部まで何分かかりますか？　通報の少ない場所に置く理由は何ですか？',
+    E: 'Eの救急車が中心部へ行くには、毎回1本の橋を渡ります。夏に増えた中心部の通報に、それで間に合っていますか？',
+    F: 'Fは町の西のはずれです。Fから中心部までは何分かかりますか？　通報の少ない場所に置く理由を教えてください。',
   };
-  function metQ(m, p) {
-    if (m === 'avg') return '平均の到着時間は短くなっても、一番不利な地区の人はどうですか？　地区ごとの平均も見てみましたか？';
-    if (m === 'max') return p.maxMode === 'p90'
-      ? '遅かった1割の平均は短くなっても、それ以外の9割の人の到着時間はどうなっていますか？　平均も比べてみましたか？'
-      : '一番遅かった時間は、たまたま遅かった1件で決まります。1年分を何回か試しても、同じ順位になりますか？';
-    if (m === 'within') return `${p.limit}分以内に着いた割合は上がっても、${p.limit}分を超えた人は何件あり、どれくらい待ちましたか？`;
-    if (m === 'gap') return '地区の差は小さくなっても、町全体の平均の到着時間は遅くなっていませんか？';
-    return '待たされた割合は減っても、到着までの時間そのものは短くなっていますか？';
-  }
+  // モデルの外の指摘（モデルを直すか、現実の確認が必要）
   const OUT = {
-    timeS: ['熱中症の通報は、暑い昼に集中しそうです。時間帯で通報の数が変わらないモデルで判断してよいですか？', '△'],
-    timeN: ['通報の数は、昼と夜で同じでしょうか？　時間帯で通報の数が変わらないモデルで判断してよいですか？', '△'],
-    hot: ['暑い日とそうでない日があります。夏の毎日を「普段の' + (DISTRICTS.center.summer / DISTRICTS.center.normal) + '倍」と同じにしてよいですか？', '△'],
-    hosp: ['病院の場所はモデルに入っていません。病院から遠い置き場所だと、戻ってくるまでの時間が変わりませんか？', '△'],
-    hospE: ['病院が川のこちら側にあるなら、Eの救急車は運ぶたびに橋を渡って戻ることになります。病院の場所を省いたままでよいですか？', '△'],
-    bridge: ['橋が工事や事故で通れなくなったら、川向こうの人はどうなりますか？', '△'],
-    jam: ['祭りや買い物客で中心部の道が混んだら、到着時間は変わりませんか？　渋滞はモデルに入っていません。', '△'],
-    old: ['お年寄りの搬送は、時間がかかることがあります。病院へ運び終えるまでを、全員35分としてよいですか？', '△'],
-    staff: ['臨時の3台目には救急隊員も必要です。人が集まらない日があったら、どうしますか？', '×'],
-    flood: ['川沿いの置き場所は、夏の大雨で川があふれたときも使えますか？', '×'],
-    nbr: ['町の外れなら、隣の町の救急車に応援を頼む方が早い場合はありませんか？', '×'],
+    timeS: '熱中症の通報は、暑い昼すぎに集中すると考えられます。このモデルは一日中同じ割合で通報が起きる設定ですが、昼に通報が重なったら、待たされる人はもっと増えませんか？',
+    timeN: '通報の数は、昼と夜で同じでしょうか。このモデルは一日中同じ割合で通報が起きる設定です。時間帯による違いを入れたら、結論は変わりませんか？',
+    hot: '暑い日もあれば、涼しい日もあります。夏のどの日も通報が普段の' + (DISTRICTS.center.summer / DISTRICTS.center.normal) + '倍という設定で、本当に判断してよいでしょうか？',
+    hosp: 'このモデルには病院の場所が入っていません。病院が中心部にあるとしたら、運んだあとに戻ってくる時間は、置き場所によって変わりませんか？',
+    hospE: '病院が川のこちら側にあるなら、Eの救急車は運ぶたびに橋を渡って戻ることになります。病院の場所を省いたままで、Eが良いと言えますか？',
+    bridge: '橋は1本しかありません。工事や事故で通れなくなったら、川向こうの人はどうなりますか？　その場合にも耐えられる案ですか？',
+    jam: '祭りや買い物の時間には、中心部の道が混みます。このモデルは渋滞を考えていませんが、道が混んだときも同じ順位になるでしょうか？',
+    old: 'お年寄りの搬送は、家から運び出すのに時間がかかることがあります。病院へ運び終えるまでを、全員同じ35分としてよいですか？',
+    staff: '臨時の3台目を動かすには、救急隊員が3人ほど必要です。夏の間、毎日その人数を集められますか？　集められない日はどうしますか？',
+    flood: '川沿いの置き場所は、夏の大雨で川があふれたときにも使えますか？　その日に救急車が出られなかったら、どうなりますか？',
+    nbr: '町の外れに置くなら、隣の町の救急車に応援を頼む方が早い場合はありませんか？　隣の町との協力は、このモデルに入っていません。',
   };
   function build(p) {
     const base = p.base, t = p.third || null, summer = p.season === 'summer', all = t ? base.concat([t]) : base.slice();
-    const ok = [], out = [];
-    if (!p.tried365) ok.push('この置き場所は、まだ1年分で試していないようです。1日や1週間の結果だけで決めていませんか？');
-    if (t) ok.push(THIRD[t]);
-    else if (summer) ok.push('夏に増えた中心部の通報に、2台だけで間に合っていますか？　待たされた割合は、普段と比べてどうですか？');
-    ok.push(metQ(p.metric, p));
-    const both = summer ? (t ? '常駐の2台も3台目も' : '2台とも') : '2台とも';
-    if (!all.includes('E')) ok.push(`${both}、川のこちら側にあります。川向こうの人の到着時間は、ほかの地区と比べてどうですか？`);
-    else if (base.includes('E')) ok.push('1台が川向こうにいます。その1台が中心部へ出動している間に川向こうで通報があったら、どうなりますか？');
-    if (base.length === 2 && dist(base[0], base[1]) <= 4) ok.push('2台が近い場所にあります。同じ方面に救急車が集まって、遠い地区が手薄になっていませんか？');
-    if (!all.includes('A')) ok.push('通報が一番多い中心部の交差点（A）に、救急車を置いていません。中心部へは何分で着いていますか？');
-    ok.push(t ? '3台目を置かない場合と比べて、1年分でどれだけ良くなりましたか？　その差は、臨時の1台を用意するだけの価値がありますか？' : '1年分を何回か試しても、同じ結果になりますか？');
-    if (t) {
-      if (t === 'E') out.push(OUT.hospE);
-      if (t === 'B') out.push(OUT.old);
-      if (t === 'C' || t === 'D') out.push(OUT.flood);
-      if (t === 'F') out.push(OUT.nbr);
-      if (t === 'A') out.push(OUT.jam);
-      out.push(OUT.timeS, OUT.staff, OUT.hot);
-    } else if (summer) {
-      out.push(OUT.timeS, OUT.hot, OUT.jam);
+    const rec = p.rec, M = METRICS;
+    let ok = [];
+    if (!rec) {
+      ok = ['この置き場所は、まだ1年分で試していないようです。1日や1週間の結果だけで決めていませんか？　1年分の記録で比べてから、もう一度報告してください。'];
     } else {
-      out.push(all.includes('E') || all.includes('D') ? OUT.bridge : OUT.hosp, OUT.jam, OUT.timeN);
+      // 一番不利な地区
+      const ds = DKEYS.filter(d => rec.dist[d] != null).sort((a, b) => rec.dist[b] - rec.dist[a]);
+      if (ds.length) ok.push(`1年の記録では、町全体の平均は${fmt(rec.avg)}分ですが、${DISTRICTS[ds[0]].name}の平均は${fmt(rec.dist[ds[0]])}分で、一番長くなっています。${DISTRICTS[ds[0]].name}の人にも納得してもらえる案ですか？`);
+      // 目標の時間を超えた件数
+      if (rec.overN) ok.push(`1年で${rec.overN.toLocaleString()}件が${rec.limit}分を超えています。一番遅かった1件は${fmt(rec.max)}分でした。その人たちを減らす工夫はありませんか？`);
+      // ほかの物差しで見ると、別の案の方が良い
+      for (const k of ['avg', 'within', 'gap', 'waited'].filter(k => k !== p.metric && M[k].on())) {
+        const cand = (p.others || []).filter(r => M[k].v(r) != null);
+        if (cand.length < 2 || M[k].v(rec) == null) continue;
+        const best = cand.reduce((a, b) => (M[k].better === 'low' ? M[k].v(b) < M[k].v(a) : M[k].v(b) > M[k].v(a)) ? b : a);
+        if (where(best) !== where(rec) && M[k].f(M[k].v(best)) !== M[k].f(M[k].v(rec))) {
+          ok.push(`この案は「${p.metricName}」で選んだそうですね。でも「${M[k].label().replace(/（.*）/, '')}」で比べると、記録の中では${where(best)}の方が良い数字（${M[k].f(M[k].v(best))}${M[k].unit}と${M[k].f(M[k].v(rec))}${M[k].unit}）です。なぜ「${p.metricName}」を優先したのですか？`);
+          break;
+        }
+      }
+      // 3台目を置く効果
+      if (t && p.rec0) ok.push(`臨時の3台目を置くと、平均は${fmt(p.rec0.avg)}分から${fmt(rec.avg)}分に、待たされた割合は${pct(p.rec0.waited)}%から${pct(rec.waited)}%になりました。その差は、臨時の1台を用意するだけの価値がありますか？`);
+      if (t && !p.rec0) ok.push('3台目を置かない場合の1年の記録が、まだありません。置かない場合と比べて、どれだけ良くなるのかを示してもらえますか？');
+      // 置き場所の特徴
+      if (t) ok.push(THIRD[t]);
+      else if (summer) ok.push(`夏に増えた中心部の通報に、2台だけで間に合っていますか？　1年の記録では、待たされた割合は${pct(rec.waited)}%です。`);
+      if (!all.includes('E')) ok.push(`救急車がすべて川のこちら側にあります。川向こうの平均は${rec.dist.east != null ? fmt(rec.dist.east) + '分です' : 'まだ記録がありません'}。川向こうの人はどう感じるでしょうか？`);
+      if (base.length === 2 && dist(base[0], base[1]) <= 4) ok.push('常駐の2台が近い場所にあります。同じ方面に救急車が集まって、遠い地区が手薄になっていませんか？');
     }
-    const u = a => a.filter((v, i) => a.indexOf(v) === i);
-    return u(ok).slice(0, 2).map(q => [q, '○']).concat(u(out).slice(0, 2));
+    const out = [];
+    if (t === 'E') out.push(OUT.hospE); if (t === 'B') out.push(OUT.old); if (t === 'C' || t === 'D') out.push(OUT.flood); if (t === 'F') out.push(OUT.nbr); if (t === 'A') out.push(OUT.jam);
+    const pool = summer ? [OUT.timeS, OUT.hot, OUT.jam, OUT.hosp].concat(t ? [OUT.staff] : []) : [OUT.timeN, OUT.jam, OUT.hosp].concat(all.includes('E') || all.includes('D') ? [OUT.bridge] : []);
+    // 置き場所に関わる指摘を少し出やすくする
+    const outPick = out.length && Math.random() < 0.6 ? pick(out) : pick(pool.filter(x => !out.includes(x)).concat(out));
+    return [[pick(ok), '○'], [outPick, '×']];
   }
   const CSS = `
 .air-ov{position:fixed;inset:0;background:rgba(23,50,78,.45);display:flex;justify-content:flex-end;z-index:60}
@@ -1248,7 +1253,7 @@ const AiReview = (function () {
     await wait(1600); if (my !== token) return; dots.remove();
     const ai = mk('div', 'air-ai'); body.appendChild(ai);
     const intro = mk('div'); ai.appendChild(intro);
-    await type(intro, '計画担当のみなさん、提案を読みました。決める前に、次の点を確かめてください。', 28, my);
+    await type(intro, '計画担当のみなさん、提案を読みました。決める前に、2つ確かめてほしいことがあります。', 28, my);
     const ol = mk('ol'); ai.appendChild(ol);
     for (const [q, k] of build(p)) {
       if (my !== token) return;
@@ -1279,11 +1284,16 @@ const AiReview = (function () {
     if (!state.focus) { flash('先に「注目する物差し」を選んでください。川辺市長（AI）は、その物差しで選んだ理由を確かめます。'); return; }
     const c = currentStations();
     const tmp = state.step === 3 ? (c.tmp || '') : null;
-    const same = r => r.step === state.step && r.days === 365 && r.base.slice().sort().join() === c.base.slice().sort().join() && r.tmp === tmp;
+    const key = r => r.base.slice().sort().join() + '|' + r.tmp;
+    const yr = state.records.filter(r => r.step === state.step && r.days === 365 && r.n).sort((a, b) => b.no - a.no);
+    const me = { base: c.base, tmp };
+    const rec = yr.find(r => key(r) === key(me)) || null;
+    const rec0 = state.step === 3 && tmp ? yr.find(r => key(r) === key({ base: c.base, tmp: '' })) || null : null;
+    const seen = new Set(), others = yr.filter(r => { const k = key(r); if (seen.has(k)) return false; seen.add(k); return true; });
     AiReview.open({
       base: [...c.base], third: state.step === 3 ? c.tmp : null, season: season(),
       metric: state.focus, metricName: METRICS[state.focus].label().replace(/（.*）/, ''),
-      limit: state.limit, maxMode: state.maxMode, tried365: state.records.some(same),
+      limit: state.limit, maxMode: state.maxMode, rec, rec0, others,
     });
   });
 }
