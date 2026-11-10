@@ -20,7 +20,8 @@ h3{font-size:16px;margin:0 0 6px}
 .steps button small{display:block;font-weight:normal;font-size:12px;color:var(--sub)}
 .steps button.on{border-color:var(--teal);background:#E3F2F1}
 .steps button .lk{font-size:12px;color:#8A5A0F}
-body.unlocked .steps .lk{display:none}
+body.unlocked .steps button[data-s="2"] .lk{display:none}
+body.unlocked3 .steps button[data-s="3"] .lk{display:none}
 .layout{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
 @media(min-width:1000px){.layout{grid-template-columns:minmax(0,1.9fr) minmax(0,1fr)}}
 .mapcard{padding:10px}
@@ -156,6 +157,30 @@ footer{text-align:center;font-size:12px;color:var(--sub);padding:8px 0 20px}
 .place{display:flex;flex-direction:column;gap:3px;align-items:flex-start}
 .place .chips{white-space:nowrap}
 .empty{color:var(--sub);padding:14px;text-align:center}
+.plsel{display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:bold;white-space:nowrap}
+.plsel select{font:inherit;font-size:13px;font-weight:normal;min-height:38px;padding:2px 4px;border:2px solid var(--line);border-radius:10px;background:var(--card);color:var(--navy);max-width:150px}
+.plsel select.on{border-color:var(--teal);background:#E3F2F1}
+.plinfo{display:none;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0 0;padding:8px 12px;border-radius:10px;background:#E3F2F1;border:1px solid #B9DEDB;font-size:14px}
+.plinfo.on{display:flex}
+.plinfo b{font-size:16px}
+.plinfo button{font:inherit;font-size:13px;border:1px solid #9AA7B4;border-radius:8px;background:#fff;color:var(--navy);padding:3px 10px;cursor:pointer;min-height:32px}
+#recTbl .chips[data-pk]{cursor:pointer;border-radius:6px;padding:1px 2px}
+#recTbl tbody tr[data-no]{cursor:pointer}
+#recTbl tbody tr[data-no]:hover td{background-color:#F1F8F7}
+#recTbl tr.viewing td{background-color:#E3F2F1!important}
+#recTbl tr.viewing .stick1{box-shadow:inset 4px 0 0 var(--teal)!important}
+.dist .dn{display:block;font-size:12px;color:var(--sub);font-weight:normal}
+.sumrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0 0;font-size:13px;color:var(--sub)}
+.sumrow button{font:inherit;font-size:13px;font-weight:bold;border:2px solid var(--line);border-radius:10px;background:var(--card);color:var(--navy);padding:4px 12px;min-height:38px;cursor:pointer}
+.sumrow button.on{background:var(--navy);border-color:var(--navy);color:#fff}
+#recTbl tr.aggrow{cursor:pointer}
+.viewtag{display:inline-block;font-size:11px;background:var(--teal);color:#fff;border-radius:999px;padding:0 6px;margin-right:4px;font-weight:bold}
+.met.tap{cursor:pointer}
+.met.tap:hover{border-color:var(--teal)}
+.met .maplink{font-size:12px;color:var(--teal);font-weight:bold;margin-top:2px}
+.viewbar{grid-column:1/-1;display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px;padding:8px 12px;border-radius:10px;background:#E3F2F1;border:1px solid #B9DEDB;font-size:14px}
+.viewbar button{font:inherit;font-size:13px;border:1px solid #9AA7B4;border-radius:8px;background:#fff;color:var(--navy);padding:3px 10px;cursor:pointer;min-height:32px}
+#recTbl .chips[data-pk]:hover{background:#E3F2F1}
 </style>
 </head>
 <body>
@@ -167,8 +192,8 @@ footer{text-align:center;font-size:12px;color:var(--sub);padding:8px 0 20px}
 
 <div class="steps" id="steps">
   <button data-s="1" class="on">① 通報の場所を調べる<small>救急車1台で試す</small></button>
-  <button data-s="2">② 2台を置く<small>普段の1日</small><span class="lk">🔒 先生用</span></button>
-  <button data-s="3">③ 夏：臨時の3台目を置く<small>熱中症で通報が増える</small><span class="lk">🔒 先生用</span></button>
+  <button data-s="2">② 2台を置く<small>普段の1日</small><span class="lk">🔒 ロック</span></button>
+  <button data-s="3">③ 夏：臨時の3台目を置く<small>熱中症で通報が増える</small><span class="lk">🔒 ロック</span></button>
 </div>
 
 <div class="layout">
@@ -194,18 +219,18 @@ footer{text-align:center;font-size:12px;color:var(--sub);padding:8px 0 20px}
         <span>何日分？</span>
         <span class="seg" id="daysSeg"><button data-v="1" class="on">1日</button><button data-v="7">1週間</button><button data-v="30">1か月</button><button data-v="365">1年</button></span>
       </div>
+      <div class="focusBox" id="focusBox">
+        <div class="fl">注目する物差し<small>（ペアで選んだもの）</small></div>
+        <div class="seg wrap" id="focusSeg">
+          <button data-f="avg">平均</button><button data-f="max" id="focusMaxBtn">一番遅い</button><button data-f="within" id="focusWithinBtn">10分以内</button><button data-f="gap">地区の差</button><button data-f="waited">待たされた</button>
+        </div>
+      </div>
       <div class="row">
         <button class="main" id="runBtn">シミュレーションする</button>
         <button class="ghost" id="playBtn">1日を再生する</button>
         <button class="ghost" id="clearDots">通報の点を消す</button>
       </div>
       <p class="msg" id="runMsg" aria-live="polite"></p>
-      <div class="focusBox" id="focusBox">
-        <div class="fl">注目する物差し<small>（班で選んだもの）</small></div>
-        <div class="seg wrap" id="focusSeg">
-          <button data-f="avg">平均</button><button data-f="max" id="focusMaxBtn">一番遅い</button><button data-f="within" id="focusWithinBtn">10分以内</button><button data-f="gap">地区の差</button><button data-f="waited">待たされた</button>
-        </div>
-      </div>
       <div class="metrics" id="metrics"></div>
     </div>
 
@@ -243,13 +268,16 @@ footer{text-align:center;font-size:12px;color:var(--sub);padding:8px 0 20px}
     <div class="rechead">
       <h2>記録</h2>
       <div class="rectools">
+        <label class="plsel">置き場所<select id="placeSel" aria-label="置き場所で絞り込む"></select></label>
         <span class="seg small" id="filterSeg"><button data-v="0" class="on">全て</button><button data-v="1">1日</button><button data-v="7">1週間</button><button data-v="30">1か月</button><button data-v="365">1年</button></span>
         <button class="ghost" id="clearRec">全部消す</button>
       </div>
     </div>
+    <div class="plinfo" id="plInfo"></div>
+    <div class="sumrow"><button id="sumBtn">置き場所ごとにまとめる</button><span id="sumInfo"></span></div>
     <p class="legend" id="recLegend"></p>
     <div class="tblwrap" id="tblwrap"><table id="recTbl"></table></div>
-    <p class="note" id="recNote">1日や1週間の結果は、試すたびに大きく変わります。比べるときは、上の「全て」の横のボタンで日数を揃えましょう。見出しをタップすると、その値で並べ替えます。</p>
+    <p class="note" id="recNote">比べるときは、日数を揃えましょう（1日や1週間の結果は、試すたびに大きく変わります）。<br>見出しをタップ：並べ替え　／　置き場所をタップ：その置き場所だけ表示　／　行をタップ：その回の結果を表示</p>
   </div>
 </div>
 
@@ -400,7 +428,8 @@ function summarize(res, limit) {
     s.dist[r.d].sum += r.resp; s.dist[r.d].n++;
   }
   s.avg /= n; s.within /= n; s.waited /= n;
-  for (const d of DKEYS) s.dist[d] = s.dist[d].n ? s.dist[d].sum / s.dist[d].n : null;
+  s.dn = {};
+  for (const d of DKEYS) { s.dn[d] = s.dist[d].n; s.dist[d] = s.dist[d].n ? s.dist[d].sum / s.dist[d].n : null; }
   return s;
 }
 
@@ -592,7 +621,7 @@ function pickSite(k) {
     const i = state.sel2.indexOf(k);
     if (i >= 0) state.sel2.splice(i, 1);
     else if (state.sel2.length < 2) state.sel2.push(k);
-    else { flash('2か所まで選べます。選び直すときは、選んだ消防署をもう一度タップして外します。'); return; }
+    else { state.sel2.shift(); state.sel2.push(k); }   // 3か所目をタップしたら、先に選んだ方を外して入れ替える
   } else {
     if (state.sel2.length < 2) {
       if (!state.sel2.includes(k)) state.sel2.push(k); else state.sel2.splice(state.sel2.indexOf(k), 1);
@@ -637,12 +666,13 @@ const STEP_TEXT = {
 };
 document.querySelectorAll('#steps button').forEach(b => b.addEventListener('click', () => {
   const s = +b.dataset.s;
-  if (s > 1 && !unlocked) { askPw(() => setStep(s)); return; }
+  if (s === 2 && !unlocked) { askPw(() => setStep(s), 2); return; }
+  if (s === 3 && !unlocked3) { askPw(() => setStep(s), 3); return; }
   setStep(s);
 }));
 function setStep(s) {
   stopPlay();
-  state.step = s; state.last = null;
+  state.step = s; state.last = null; viewNo = 0;
   document.querySelectorAll('#steps button').forEach(b => b.classList.toggle('on', +b.dataset.s === s));
   gRoute.innerHTML = ''; gDots.innerHTML = '';
   $('metrics').innerHTML = '';
@@ -707,7 +737,8 @@ $('runBtn').addEventListener('click', () => {
   showMetrics(s, true);
   if (state.step === 1) drawDots(res);
   const c = currentStations();
-  if (s.n) addRecord({ step: state.step, base: [...c.base], tmp: state.step === 3 ? (c.tmp || '') : null, days: state.days, ...s });
+  viewNo = 0;
+  if (s.n) addRecord({ step: state.step, base: [...c.base], tmp: state.step === 3 ? (c.tmp || '') : null, days: state.days, ...s, nodes: state.step === 1 ? res.map(r => r.node) : null });
   drawRecords();
   $('runMsg').className = 'msg';
   $('runMsg').textContent = s.n ? `${dayText(state.days)}で、通報は${s.n}件ありました。もう一度押すと、別の${dayText(state.days)}を試します。` : '';
@@ -724,6 +755,8 @@ function stats(res) {
   s.gap = dv.length === DKEYS.length ? Math.max(...dv) - Math.min(...dv) : null;   // 通報がなかった地区があるときは出さない
   s.limit = state.limit;
   s.overN = res.filter(r => r.resp > state.limit + 1e-9).length;   // 目標の時間を超えた件数
+  const w = res.reduce((a, b) => b.resp > a.resp ? b : a);           // 一番時間がかかった1件
+  s.worst = { node: w.node, t: w.t, start: w.start, arriveAt: w.arriveAt, site: w.site, tr: w.tr, d: w.d, resp: w.resp };
   return s;
 }
 function maxName() { return state.maxMode === 'p90' ? '遅かった1割の平均' : '一番遅かった時間'; }
@@ -744,16 +777,20 @@ function showMetrics(s, animate) {
   if (!s) { m.innerHTML = ''; return; }
   if (!s.n) { m.innerHTML = '<p class="msg">この期間は通報がありませんでした。もう一度試してください。</p>'; return; }
   const F = state.focus;
-  const card = (key, k, v, unit, dir, extra) => `<div class="met ${F === key ? 'focus' : ''}" ${METRICS[key].on() ? '' : 'hidden'}><div class="k">${k}<span class="dir">（${dir}）</span></div><div class="v">${v}<small> ${unit}</small></div>${extra || ''}</div>`;
+  const card = (key, k, v, unit, dir, extra) => `<div class="met ${F === key ? 'focus' : ''}" data-k="${key}" ${METRICS[key].on() ? '' : 'hidden'}><div class="k">${k}<span class="dir">（${dir}）</span></div><div class="v">${v}<small> ${unit}</small></div>${extra || ''}</div>`;
   const dv = d => s.dist[d] == null ? '－' : fmt(s.dist[d]);
   m.innerHTML =
     card('avg', '平均の到着時間', fmt(s.avg), '分', '短いほど良い') +
-    card('max', maxName(), fmt(state.maxMode === 'p90' ? s.p90 : s.max), '分', '短いほど良い') +
+    card('max', maxName(), fmt(state.maxMode === 'p90' ? s.p90 : s.max), '分', '短いほど良い',
+      `<div class="note" style="line-height:1.3">${state.maxMode === 'p90' ? '遅かった方から1割の通報の、到着までの時間の平均' : '通報から到着まで、一番時間がかかった1件'}</div>` +
+      (s.worst ? `<div class="maplink">タップすると、${state.maxMode === 'p90' ? '一番遅かった' : 'その'}1件を地図で見られます ›</div>` : '')) +
     card('within', `${s.limit}分以内に着いた割合`, Math.round(s.within * 100), '%', '高いほど良い', `<div class="overline">${s.limit}分を超えたのは <b>${s.overN.toLocaleString()}件</b>（${s.n.toLocaleString()}件中）</div>`) +
     card('waited', '待たされた通報の割合', Math.round(s.waited * 100), '%', dirTextW, '<div class="note" style="line-height:1.3">全部の救急車が出動中だった通報</div>') +
     `<div class="met wide ${F === 'gap' ? 'focus' : ''}" ${state.show.dist ? '' : 'hidden'}><div class="k">地区ごとの平均の到着時間<span class="dir">（短いほど良い）</span></div>
-      <div class="dist">${DKEYS.map(d => `<div><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${DCOL[d]};border:1px solid #9AA;margin-right:4px"></span>${DSHORT[d]}<b>${dv(d)}<small style="font-size:13px;font-weight:normal"> 分</small></b></div>`).join('')}</div>
+      <div class="dist">${DKEYS.map(d => `<div><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${DCOL[d]};border:1px solid #9AA;margin-right:4px"></span>${DSHORT[d]}<b>${dv(d)}<small style="font-size:13px;font-weight:normal"> 分</small></b>${s.dn ? `<span class="dn">通報 ${s.dn[d].toLocaleString()}件</span>` : ''}</div>`).join('')}</div>
       <div class="gapline">地区の差（一番遅い地区 − 一番早い地区）：<b>${s.gap == null ? '－' : fmt(s.gap)}</b> 分（小さいほど公平）</div></div>`;
+  const mc = m.querySelector('.met[data-k="max"]');
+  if (mc && s.worst) { mc.classList.add('tap'); mc.onclick = () => showWorst(s.worst, s.days || state.days); }
   m.classList.remove('flash');
   if (animate) { void m.offsetWidth; m.classList.add('flash'); clearTimeout(showMetrics.t); showMetrics.t = setTimeout(() => m.classList.remove('flash'), 700); }
 }
@@ -786,8 +823,22 @@ function updateFocusUI() {
 }
 
 // ----- 記録 -----
-let recNo = 0, latestNo = 0, filterDays = 0;
+let recNo = 0, latestNo = 0, filterDays = 0, viewNo = 0, sumMode = false;
+$('sumBtn').addEventListener('click', () => { sumMode = !sumMode; drawRecords(); });
+// 同じ置き場所の1年分の記録を、平均して1行にまとめる
+function aggregate(list) {
+  const mean = (f, l) => { const v = (l || list).map(f).filter(x => x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+  const lim = list.filter(r => r.limit === state.limit);
+  const dist = {}; for (const d of DKEYS) dist[d] = mean(r => r.dist[d]);
+  return { agg: list.length, no: 0, step: list[0].step, base: list[0].base.slice().sort(), tmp: list[0].tmp, days: 365, n: mean(r => r.n), avg: mean(r => r.avg), max: mean(r => r.max), p90: mean(r => r.p90),
+    within: lim.length ? mean(r => r.within, lim) : null, limit: lim.length ? state.limit : null, overN: lim.length ? Math.round(mean(r => r.overN, lim)) : 0, waited: mean(r => r.waited), gap: mean(r => r.gap), dist };
+}
+const filterPlace = { 1: '', 2: '', 3: '' };   // 場面ごとに、絞り込んでいる置き場所
+const placeKey = r => r.base.slice().sort().join('・') + (r.tmp === null ? '' : '＋' + (r.tmp || 'なし'));
+const placeLabel = k => k.replace('＋なし', '（3台目なし）').replace('＋', '　＋臨時 ');
+function setPlace(k) { filterPlace[state.step] = k; drawRecords(); }
 function addRecord(r) { r.no = ++recNo; latestNo = r.no; state.records.push(r); }
+$('placeSel').addEventListener('change', () => setPlace($('placeSel').value));
 document.querySelectorAll('#filterSeg button').forEach(b => b.addEventListener('click', () => {
   document.querySelectorAll('#filterSeg button').forEach(x => x.classList.toggle('on', x === b));
   filterDays = +b.dataset.v; drawRecords();
@@ -799,7 +850,32 @@ function placeHTML(r) {
 }
 function drawRecords() {
   const all = state.records.filter(r => r.step === state.step);
-  const rows = all.filter(r => !filterDays || r.days === filterDays);
+  // 置き場所の選択肢（記録の多い順）
+  const cnt = {};
+  for (const r of all) { const k = placeKey(r); cnt[k] = (cnt[k] || 0) + 1; }
+  let fp = filterPlace[state.step];
+  if (fp && !cnt[fp]) fp = filterPlace[state.step] = '';
+  const ps = $('placeSel');
+  ps.innerHTML = '<option value="">全て</option>' + Object.keys(cnt).sort((a, b) => cnt[b] - cnt[a] || a.localeCompare(b)).map(k => `<option value="${k}" ${k === fp ? 'selected' : ''}>${placeLabel(k)}（${cnt[k]}件）</option>`).join('');
+  ps.classList.toggle('on', !!fp);
+  let rows = all.filter(r => (!filterDays || r.days === filterDays) && (!fp || placeKey(r) === fp));
+  if (sumMode) {
+    const g = {};
+    for (const r of all.filter(r => r.days === 365 && (!fp || placeKey(r) === fp))) (g[placeKey(r)] = g[placeKey(r)] || []).push(r);
+    rows = Object.values(g).map(aggregate);
+  }
+  $('sumBtn').classList.toggle('on', sumMode); $('sumBtn').textContent = sumMode ? '1件ずつの表示に戻す' : '置き場所ごとにまとめる';
+  $('sumInfo').textContent = sumMode ? '1年分の記録を、置き場所ごとに平均しています（良い順）。行をタップすると、その置き場所の記録を1件ずつ見られます。' : '';
+  $('filterSeg').style.opacity = sumMode ? .4 : 1;
+  // 絞り込み中の案内
+  const pi = $('plInfo');
+  if (fp) {
+    const mine = all.filter(r => placeKey(r) === fp), y = mine.filter(r => r.days === 365);
+    const F0 = state.focus, mv = F0 && y.length ? y.map(r => METRICS[F0].v(r)).filter(v => v != null) : [];
+    const avgTxt = mv.length ? `　1年の記録での「${METRICS[F0].short()}」の平均：<b>${METRICS[F0].f(mv.reduce((a, b) => a + b, 0) / mv.length)}</b> ${METRICS[F0].unit}` : '';
+    pi.innerHTML = `<span><b>${placeLabel(fp)}</b> の記録だけを表示中（${mine.length}件、うち1年 ${y.length}件）${avgTxt}</span><button id="plClear">全ての記録に戻す</button>`;
+    pi.classList.add('on'); $('plClear').onclick = () => setPlace('');
+  } else { pi.classList.remove('on'); pi.innerHTML = ''; }
   const tbl = $('recTbl');
   const F = state.focus;
   // 凡例
@@ -807,12 +883,15 @@ function drawRecords() {
     ? `<span>注目：<b>${METRICS[F].label()}</b>（${F === 'waited' ? dirTextW : dirText(F)}）</span><span>色が濃いほど良い<span class="sw"></span></span><span><span style="color:#B26B00">★</span> それぞれの列で一番良い記録</span>`
     : '<span><span style="color:#B26B00">★</span> それぞれの列で一番良い記録</span><span>「注目する物差し」を選ぶと、その列が色の濃さで比べやすくなります。</span>';
   if (!all.length) { tbl.innerHTML = '<tbody><tr><td class="empty">この場面では、まだ記録がありません。「シミュレーションする」を押すと、ここに結果が記録されます。</td></tr></tbody>'; return; }
-  if (!rows.length) { tbl.innerHTML = `<tbody><tr><td class="empty">${dayText(filterDays)}の記録はまだありません。</td></tr></tbody>`; return; }
+  if (!rows.length && sumMode) { tbl.innerHTML = '<tbody><tr><td class="empty">まとめるには、1年分の記録が必要です。「何日分？」を1年にして、シミュレーションしてください。</td></tr></tbody>'; return; }
+  if (!rows.length) { tbl.innerHTML = `<tbody><tr><td class="empty">${fp ? placeLabel(fp) + 'の' : ''}${filterDays ? dayText(filterDays) + 'の' : ''}記録はまだありません。</td></tr></tbody>`; return; }
   // 並べ替え
-  const sk = state.sortKey || 'no';
+  let sk = state.sortKey || 'no';
   if (!state.sortKey) state.sortAsc = false;
+  let asc = state.sortAsc;
+  if (sumMode && sk === 'no') { sk = F && METRICS[F].on() ? F : 'avg'; asc = METRICS[sk].better === 'low'; }   // まとめは、注目の物差しが良い順
   const val = (k, r) => k === 'no' ? r.no : k === 'center' || k === 'old' || k === 'east' ? r.dist[k] : METRICS[k] ? METRICS[k].v(r) : null;
-  if (sk) rows.sort((a, b) => { const x = val(sk, a), y = val(sk, b); if (x == null) return 1; if (y == null) return -1; return state.sortAsc ? x - y : y - x; });
+  if (sk) rows.sort((a, b) => { const x = val(sk, a), y = val(sk, b); if (x == null) return 1; if (y == null) return -1; return asc ? x - y : y - x; });
   // 表示どおりの値（四捨五入した値）で比べる。同じ表示の値は同じ順位として扱う
   const unitOf = k => METRICS[k] ? METRICS[k].unit : '分';
   const betterOf = k => METRICS[k] ? METRICS[k].better : 'low';
@@ -836,10 +915,10 @@ function drawRecords() {
   const allCols = ['avg', 'max', 'within'].filter(show);
   const dCols = state.show.dist ? ['center', 'old', 'east', 'gap'] : [];
   const wCols = show('waited') ? ['waited'] : [];
-  const hdr = (k, name, unit, cls) => `<th data-k="${k}" class="num ${cls || ''} ${F === k ? 'focus' : ''} ${sk === k ? 'sorted' : ''}" title="タップで並べ替え">${name}${sk === k ? (state.sortAsc ? ' ▲' : ' ▼') : ''}<span class="u">${unit}</span></th>`;
+  const hdr = (k, name, unit, cls) => `<th data-k="${k}" class="num ${cls || ''} ${F === k ? 'focus' : ''} ${sk === k ? 'sorted' : ''}" title="タップで並べ替え">${name}${sk === k ? (asc ? ' ▲' : ' ▼') : ''}<span class="u">${unit}</span></th>`;
   const placeName = state.step === 1 ? '置き場所' : state.step === 2 ? '2台の場所' : '常駐の2台＋臨時';
   let h = '<thead><tr>';
-  h += `<th class="stick1" rowspan="2" data-k="no" style="cursor:pointer;vertical-align:bottom">回${sk === 'no' ? (state.sortAsc ? ' ▲' : ' ▼') : ''}</th><th class="stick2" rowspan="2" style="vertical-align:bottom;text-align:left">${placeName}<span class="u" style="font-weight:normal;font-size:11px;color:var(--sub)">と日数</span></th>`;
+  h += `<th class="stick1" rowspan="2" data-k="no" style="cursor:pointer;vertical-align:bottom">${sumMode ? '順' : '回'}${sk === 'no' ? (asc ? ' ▲' : ' ▼') : ''}</th><th class="stick2" rowspan="2" style="vertical-align:bottom;text-align:left">${placeName}<span class="u" style="font-weight:normal;font-size:11px;color:var(--sub)">と日数</span></th>`;
   if (allCols.length) h += `<th class="g-all" colspan="${allCols.length}">町全体</th>`;
   if (dCols.length) h += `<th class="g-d" colspan="4">地区ごとの平均</th>`;
   if (wCols.length) h += `<th class="g-w">出動の様子</th>`;
@@ -853,9 +932,19 @@ function drawRecords() {
     const star = bestOf[k] != null && shown(k, v) === bestOf[k] ? '<span class="star" aria-label="一番良い">★</span>' : '';
     return `<td class="num ${isF ? 'fcell' : ''}" style="${isF ? shade(v) : ''}">${star}${txt}</td>`;
   };
+  let rank = 0;
   for (const r of rows) {
+    if (r.agg) {
+      h += `<tr class="aggrow" data-agg="${placeKey(r)}" title="タップすると、この置き場所の記録を1件ずつ表示"><td class="stick1">${++rank}</td><td class="stick2"><div class="place"><span class="chips">${placeHTML(r)}</span><span class="daypill">1年×${r.agg}回の平均</span></div></td>`;
+      for (const k of allCols) { const v = METRICS[k].v(r); h += cell(k, v, METRICS[k].f(v)); }
+      if (dCols.length) { for (const d of ['center', 'old', 'east']) h += cell(d, r.dist[d], r.dist[d] == null ? '－' : fmt(r.dist[d])); h += cell('gap', r.gap, METRICS.gap.f(r.gap)); }
+      for (const k of wCols) { const v = METRICS[k].v(r); h += cell(k, v, METRICS[k].f(v)); }
+      h += '<td></td></tr>';
+      continue;
+    }
     const latest = r.no === latestNo;
-    h += `<tr class="${latest ? 'latest' : ''}"><td class="stick1">${latest ? '<span class="newtag">最新</span>' : ''}${r.no}</td><td class="stick2"><div class="place"><span class="chips">${placeHTML(r)}</span><span class="daypill ${r.days < 30 ? 'short' : ''}">${dayText(r.days)}${r.days < 30 ? '・変動が大きい' : ''}</span></div></td>`;
+    const viewing = r.no === viewNo;
+    h += `<tr data-no="${r.no}" class="${latest ? 'latest' : ''} ${viewing ? 'viewing' : ''}" title="タップすると、この回の結果を表示"><td class="stick1">${viewing ? '<span class="viewtag">表示中</span>' : latest ? '<span class="newtag">最新</span>' : ''}${r.no}</td><td class="stick2"><div class="place"><span class="chips" data-pk="${placeKey(r)}" title="この置き場所の記録だけを見る">${placeHTML(r)}</span><span class="daypill ${r.days < 30 ? 'short' : ''}">${dayText(r.days)}${r.days < 30 ? '・変動が大きい' : ''}</span></div></td>`;
     for (const k of allCols) { const v = METRICS[k].v(r); h += cell(k, v, METRICS[k].f(v) + (k === 'within' && v != null ? `<span class="sub">超え${r.overN.toLocaleString()}件</span>` : '')); }
     if (dCols.length) { for (const d of ['center', 'old', 'east']) h += cell(d, r.dist[d], r.dist[d] == null ? '－' : fmt(r.dist[d])); h += cell('gap', r.gap, METRICS.gap.f(r.gap)); }
     for (const k of wCols) { const v = METRICS[k].v(r); h += cell(k, v, METRICS[k].f(v)); }
@@ -869,10 +958,76 @@ function drawRecords() {
     else { state.sortKey = k; state.sortAsc = k === 'no' ? true : !(METRICS[k] && METRICS[k].better === 'high'); }
     drawRecords();
   }));
+  tbl.querySelectorAll('tr[data-agg]').forEach(tr => tr.addEventListener('click', () => { sumMode = false; setPlace(tr.dataset.agg); }));
+  tbl.querySelectorAll('tbody tr[data-no]').forEach(tr => tr.addEventListener('click', e => {
+    if (e.target.closest('button, .chips')) return;
+    viewRecord(+tr.dataset.no);
+  }));
+  tbl.querySelectorAll('.chips[data-pk]').forEach(c => c.addEventListener('click', () => setPlace(filterPlace[state.step] === c.dataset.pk ? '' : c.dataset.pk)));
   tbl.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => {
     const no = +b.dataset.del; state.records = state.records.filter(r => r.no !== no); drawRecords();
   }));
 }
+// ----- 一番時間がかかった1件を地図に出す -----
+function showWorst(w, days) {
+  if (playing) return;
+  gRoute.innerHTML = '';
+  const path = pathTo(w.site, w.node);
+  el('polyline', { points: path.map(n => px(nx(n)) + ',' + py(ny(n))).join(' '), fill: 'none', stroke: '#0E7C7B', 'stroke-width': 5, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', opacity: .9 }, gRoute);
+  const cx = px(nx(w.node)), cy = py(ny(w.node));
+  el('circle', { cx, cy, r: 17, fill: 'none', stroke: '#6E1A14', 'stroke-width': 3 }, gRoute);
+  el('circle', { cx, cy, r: 8, fill: '#6E1A14', stroke: '#fff', 'stroke-width': 2.5 }, gRoute);
+  const wait = w.start - w.t;
+  const l1 = `一番時間がかかった1件：${fmt(w.resp)}分`;
+  const l2 = `待ち ${fmt(wait)}分 ＋ 準備 ${PREP}分 ＋ 道のり ${fmt(w.tr)}分`;
+  const ly = cy < 120 ? cy + 50 : cy - 52;
+  const bg = el('rect', { y: ly - 22, height: 54, rx: 8, fill: '#17324E', opacity: .94 }, gRoute);
+  const t1 = el('text', { y: ly, 'text-anchor': 'middle', 'font-size': 16, 'font-weight': 'bold', fill: '#fff' }, gRoute); t1.textContent = l1;
+  const t2 = el('text', { y: ly + 22, 'text-anchor': 'middle', 'font-size': 14, fill: '#DDE6EE' }, gRoute); t2.textContent = l2;
+  const tw = Math.max(t1.getComputedTextLength ? t1.getComputedTextLength() : 260, t2.getComputedTextLength ? t2.getComputedTextLength() : 300);
+  const x = Math.min(Math.max(cx, tw / 2 + 16), 820 - tw / 2 - 16);
+  t1.setAttribute('x', x); t2.setAttribute('x', x); bg.setAttribute('x', x - tw / 2 - 12); bg.setAttribute('width', tw + 24);
+  const day = Math.floor(w.t / 1440), mm = Math.floor(w.t % 1440);
+  const when = (days > 1 ? `${day + 1}日目の` : '') + `${Math.floor(mm / 60)}時${String(mm % 60).padStart(2, '0')}分`;
+  const why = wait > 0.05
+    ? `救急車が全部出動中だったため、${fmt(wait)}分待ってから、${w.site}の救急車が向かいました。時間の多くは「待ち」です。`
+    : `空いていた${w.site}の救急車がすぐに向かいましたが、道のりが${fmt(w.tr)}分かかりました。時間の多くは「道のり」です。`;
+  $('runMsg').className = 'msg';
+  $('runMsg').textContent = `一番時間がかかったのは、${when}に${DISTRICTS[w.d].name}であった通報です。${why}`;
+  $('map').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// ----- 記録をタップして、その回の結果を表示する -----
+function viewRecord(no) {
+  const r = state.records.find(x => x.no === no);
+  if (!r || r.step !== state.step) return;
+  stopPlay();
+  if (state.step === 1) state.sel1 = [...r.base];
+  else { state.sel2 = [...r.base]; if (state.step === 3) state.extra = r.tmp || null; }
+  state.days = r.days;
+  document.querySelectorAll('#daysSeg button').forEach(b => b.classList.toggle('on', +b.dataset.v === r.days));
+  viewNo = r.no;
+  refresh();
+  gRoute.innerHTML = '';
+  if (state.step === 1) { gDots.innerHTML = ''; if (r.nodes) drawDots(r.nodes.map(n => ({ node: n }))); }
+  state.last = r;
+  showMetrics(r, true);
+  $('runMsg').className = 'msg';
+  $('runMsg').textContent = '';
+  $('metrics').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+function addViewBar(r) {
+  const where = r.base.join('・') + (r.tmp === null ? '' : r.tmp ? '＋臨時' + r.tmp : '（3台目なし）');
+  const bar = document.createElement('div'); bar.className = 'viewbar';
+  bar.innerHTML = `<span><b>${r.no}回目の記録</b>（${where}・${dayText(r.days)}・通報${r.n.toLocaleString()}件）を表示しています</span><button>最新の結果に戻る</button>`;
+  bar.querySelector('button').onclick = () => {
+    const last = state.records.filter(x => x.step === state.step).sort((a, b) => b.no - a.no)[0];
+    if (last && last.no !== r.no) viewRecord(last.no); else { viewNo = 0; bar.remove(); drawRecords(); }
+  };
+  $('metrics').prepend(bar);
+}
+// 物差しを切り替えてカードを描き直しても、表示中の案内が消えないようにする
+{ const _show = showMetrics; showMetrics = function (st, an) { _show(st, an); if (viewNo && st && st.no === viewNo) addViewBar(st); }; }
 let clearTimer = 0;
 $('clearRec').addEventListener('click', () => {
   const btn = $('clearRec');
@@ -998,21 +1153,26 @@ $('sumSel').addEventListener('change', () => { DISTRICTS.center.summer = NORMAL_
 $('showD1').addEventListener('change', drawDTable);
 DISTRICTS.center.summer = NORMAL_CENTER * 3;
 
-// ----- パスワード（②・③と先生用の設定）-----
-// 変えるときは PW_CODE を新しい4桁に書き換える
+// ----- パスワード -----
+// PW_CODE：②と先生用の設定　　PW3_CODE：③（③の番号を入れると②も開く）
+// 変えるときは、それぞれ新しい4桁に書き換える
 const PW_CODE = '4826';
-let unlocked = false, afterPw = null;
+const PW3_CODE = '0119';
+let unlocked = false, unlocked3 = false, afterPw = null, needLevel = 2;
 const setBox = $('setBox');
-{ const tag = document.createElement('span'); tag.className = 'lockTag'; tag.textContent = '🔒 先生用'; setBox.querySelector('summary').appendChild(tag); }
+{ const tag = document.createElement('span'); tag.className = 'lockTag'; tag.textContent = '🔒 ロック'; setBox.querySelector('summary').appendChild(tag); }
 setBox.querySelector('summary').addEventListener('click', e => {
   if (unlocked || setBox.open) return;
-  e.preventDefault(); askPw(() => { setBox.open = true; });
+  e.preventDefault(); askPw(() => { setBox.open = true; }, 2);
 });
-function askPw(cb) { afterPw = cb; $('pwIn').value = ''; $('pwErr').textContent = ''; $('pwMask').classList.add('on'); setTimeout(() => $('pwIn').focus(), 50); }
+function askPw(cb, level) { afterPw = cb; needLevel = level || 2; $('pwT').textContent = needLevel === 3 ? 'パスワード（③）' : 'パスワード'; $('pwIn').value = ''; $('pwErr').textContent = ''; $('pwMask').classList.add('on'); setTimeout(() => $('pwIn').focus(), 50); }
 function hidePw() { $('pwMask').classList.remove('on'); }
 function tryPw() {
-  if ($('pwIn').value === PW_CODE) { unlocked = true; document.body.classList.add('unlocked'); hidePw(); if (afterPw) afterPw(); afterPw = null; }
-  else { $('pwErr').textContent = '番号が違います'; $('pwIn').value = ''; $('pwIn').focus(); }
+  const v = $('pwIn').value;
+  if (v === PW3_CODE) { unlocked3 = true; document.body.classList.add('unlocked3'); }
+  if (v === PW3_CODE || v === PW_CODE) { unlocked = true; document.body.classList.add('unlocked'); }
+  if ((needLevel === 3 && unlocked3) || (needLevel === 2 && unlocked)) { hidePw(); if (afterPw) afterPw(); afterPw = null; }
+  else { $('pwErr').textContent = needLevel === 3 && v === PW_CODE ? '③は別の番号です' : '番号が違います'; $('pwIn').value = ''; $('pwIn').focus(); }
 }
 $('pwIn').addEventListener('input', () => { const v = $('pwIn').value.replace(/[^0-9]/g, ''); $('pwIn').value = v; $('pwErr').textContent = ''; if (v.length === 4) tryPw(); });
 $('pwIn').addEventListener('keydown', e => { if (e.key === 'Enter') tryPw(); if (e.key === 'Escape') hidePw(); });
@@ -1022,6 +1182,184 @@ $('pwMask').addEventListener('click', e => { if (e.target === $('pwMask')) hideP
 
 drawMap();
 refresh();
+</script>
+<script>
+// ===== AIによる提案のチェック（指摘は事前にAIで作成したもの）=====
+const AiReview = (function () {
+  const dist = (a, b) => Math.abs(SITES[a].x - SITES[b].x) + Math.abs(SITES[a].y - SITES[b].y);
+  const pick = a => a[Math.floor(Math.random() * a.length)];
+  const pct = v => Math.round(v * 100);
+  const where = r => r.base.join('と') + (r.tmp ? '＋' + r.tmp : '');
+  // 置き場所ごとの指摘（アプリで確かめられる）　**…** は太字
+  const THIRD = {
+    A: '3台目を、中心部の真ん中（A）に置く案ですね。中心部以外の地区の到着時間も、短くなりましたか？',
+    B: '夏に通報が増えるのは、中心部です。通報が増えないお年寄りの地区（B）に3台目を置くのは、なぜですか？',
+    C: 'Cは、中心部の北の端にあります。中心部の南側で通報があったとき、向かうのはどの救急車ですか？',
+    D: 'Dは橋のそばなので、川向こうへは早く着けます。通報が増えた中心部の西側には、何分で着きますか？',
+    E: 'Eの救急車が中心部へ行くには、1本だけの橋を渡ります。夏に増えた中心部の通報に、間に合っていますか？',
+    F: 'Fは町の西の外れで、周りの通報は多くありません。それでもFに3台目を置くのは、なぜですか？',
+  };
+  // モデルの外の指摘（モデルを直すか、現実の確認が必要）
+  const OUT = {
+    timeS: '熱中症の通報は、暑い昼過ぎに集中しそうです。このモデルでは昼も夜も同じ割合ですが、昼に通報が重なったら、待たされる人は増えませんか？',
+    timeN: 'このモデルでは、昼も夜も同じ割合で通報が起きます。昼と夜の違いを入れても、同じ結論になりますか？',
+    hot: 'このモデルでは、夏は毎日、中心部の通報が普段の**' + (DISTRICTS.center.summer / DISTRICTS.center.normal) + '倍**です。猛暑の日に通報がもっと増えても、この案で足りますか？',
+    hosp: 'このモデルには、病院の場所が入っていません。病院から遠い置き場所では、次の出動までの時間が延びませんか？',
+    hospE: '病院が川のこちら側にあるなら、Eの救急車は運ぶたびに橋を渡って戻ります。その時間を入れても、Eが良いと言えますか？',
+    bridge: '川を渡れる橋は、1本だけです。工事や事故で橋が通れない日も、この案で対応できますか？',
+    jam: 'このモデルには、渋滞が入っていません。夏祭りなどで中心部の道が混んでも、同じ結果になりますか？',
+    old: 'お年寄りの搬送は、家から運び出すのに時間がかかることがあります。現場に着いてからの時間を、全員同じ35分としてよいですか？',
+    staff: '臨時の3台目を動かすには、救急隊員が3人ほど必要です。夏の間、その人数を毎日確保できますか？',
+    flood: '川沿いの置き場所は、大雨で川があふれると使えなくなるかもしれません。その日の通報には、どう対応しますか？',
+    nbr: '町の外れでは、隣の町の救急車の方が早く着く場合もあります。隣の町と協力する案は、考えましたか？',
+  };
+  // 「別の案の方が良い」と言うのは、この差以上のときだけ（誤差程度の差では指摘しない）
+  const MIN_DIFF = { avg: 0.3, gap: 0.5, within: 0.02, waited: 0.01 };
+  const B = s => '**' + s + '**';
+  // 同じ提案・同じ記録なら、いつも同じ4件（アプリで確かめられる点2件＋モデルの外の点2件）を返す
+  function build(p) {
+    const base = p.base, t = p.third || null, summer = p.season === 'summer', all = t ? base.concat([t]) : base.slice();
+    const rec = p.rec, M = METRICS, ok = [];
+    if (!rec) {
+      ok.push('この案を1年分で試した記録が、まだありません。1日や1週間の結果だけで決めていませんか？');
+      if (t) ok.push(THIRD[t]);
+      else if (summer) ok.push('2台だけで、夏に増えた中心部の通報に間に合っていますか？');
+      if (!all.includes('E')) ok.push('救急車は全て川のこちら側にあります。川向こうの人は、この案に納得するでしょうか？');
+      ok.push('1年分を何回か試しても、同じ結果になりますか？');
+    } else {
+      // ほかの物差しで見ると、別の案の方が「はっきり」良い
+      for (const k of ['avg', 'within', 'gap', 'waited'].filter(k => k !== p.metric && M[k].on())) {
+        const mine = M[k].v(rec);
+        // 台数が同じ案どうしで比べる（3台の案と2台の案は比べない）
+        const cand = (p.others || []).filter(r => M[k].v(r) != null && where(r) !== where(rec) && !!r.tmp === !!rec.tmp);
+        if (mine == null || !cand.length) continue;
+        const best = cand.reduce((a, b) => (M[k].better === 'low' ? M[k].v(b) < M[k].v(a) : M[k].v(b) > M[k].v(a)) ? b : a);
+        const diff = M[k].better === 'low' ? mine - M[k].v(best) : M[k].v(best) - mine;
+        if (diff >= MIN_DIFF[k]) {
+          ok.push(`「${M[k].label().replace(/（.*）/, '')}」で比べると、${where(best)}の案は${B(M[k].f(M[k].v(best)) + M[k].unit)}、この案は${B(M[k].f(mine) + M[k].unit)}です。それでも「${p.metricName}」を優先するのは、なぜですか？`);
+          break;
+        }
+      }
+      // 3台目を置く効果
+      if (t && p.rec0) {
+        const k = M[p.metric].v(rec) != null && M[p.metric].v(p.rec0) != null ? p.metric : 'waited';
+        ok.push(`臨時の3台目を置くと、「${M[k].label().replace(/（.*）/, '')}」は${B(M[k].f(M[k].v(p.rec0)) + M[k].unit)}から${B(M[k].f(M[k].v(rec)) + M[k].unit)}に変わりました。この差は、臨時の1台を用意するだけの価値がありますか？`);
+      }
+      if (t && !p.rec0) ok.push('3台目を置かない場合の1年分の記録が、まだありません。置いた場合と比べて、どれだけ変わりますか？');
+      // 置き場所の特徴
+      if (t) ok.push(THIRD[t]);
+      else if (summer) ok.push(`2台だけの夏は、通報の${B(pct(rec.waited) + '%')}が待たされています。待たされる人を、このままにしてよいですか？`);
+      // 一番不利な地区
+      const ds = DKEYS.filter(d => rec.dist[d] != null).sort((a, b) => rec.dist[b] - rec.dist[a]);
+      if (ds.length) { const nm = DISTRICTS[ds[0]].name; ok.push(`${nm}の平均は${B(fmt(rec.dist[ds[0]]) + '分')}で、町全体の平均（${fmt(rec.avg)}分）より遅くなっています。${nm}の人に、どう説明しますか？`); }
+      if (!all.includes('E')) ok.push(rec.dist.east != null ? `救急車は全て川のこちら側で、川向こうの平均は${B(fmt(rec.dist.east) + '分')}です。川向こうの人は、この案に納得するでしょうか？` : '救急車は全て川のこちら側にあります。川向こうの人は、この案に納得するでしょうか？');
+      if (rec.overN) ok.push(`1年で${B(rec.overN.toLocaleString() + '件')}が目標の${rec.limit}分を超え、一番遅い1件は${B(fmt(rec.max) + '分')}でした。こうした通報を減らす工夫はありますか？`);
+      if (base.length === 2 && dist(base[0], base[1]) <= 4) ok.push('常駐の2台が、近い場所に集まっています。遠い地区への到着が、遅くなっていませんか？');
+    }
+    const out = [];
+    if (t === 'E') out.push(OUT.hospE); if (t === 'B') out.push(OUT.old); if (t === 'C' || t === 'D') out.push(OUT.flood); if (t === 'F') out.push(OUT.nbr); if (t === 'A') out.push(OUT.jam);
+    if (summer) out.push(OUT.timeS, ...(t ? [OUT.staff] : []), OUT.hot, OUT.hosp, OUT.jam);
+    else out.push(...(all.includes('E') || all.includes('D') ? [OUT.bridge] : []), OUT.hosp, OUT.jam, OUT.timeN);
+    const u = a => a.filter((v, i) => a.indexOf(v) === i);
+    return u(ok).slice(0, 2).map(q => [q, '○']).concat(u(out).slice(0, 2).map(q => [q, '×']));
+  }
+  const CSS = `
+.air-ov{position:fixed;inset:0;background:rgba(23,50,78,.45);display:flex;justify-content:flex-end;z-index:60}
+.air-panel{width:min(560px,100%);height:100%;background:var(--bg);color:var(--navy);display:flex;flex-direction:column;box-shadow:-8px 0 24px rgba(0,0,0,.2)}
+.air-head{display:flex;align-items:center;gap:12px;padding:14px 18px;background:var(--navy);color:#fff}
+.air-av{width:40px;height:40px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:13px;flex:none}
+.air-head h3{font-size:17px;margin:0;flex:1}
+.air-x{font:inherit;background:none;border:0;color:#fff;font-size:28px;cursor:pointer;line-height:1;padding:0 4px}
+.air-body{flex:1;overflow:auto;padding:18px 16px 8px;display:flex;flex-direction:column;gap:12px;-webkit-overflow-scrolling:touch}
+.air-me{align-self:flex-end;max-width:88%;background:#E3F2F1;border:1px solid #B9DEDB;border-radius:14px 14px 4px 14px;padding:10px 14px;font-size:15px}
+.air-ai{align-self:flex-start;max-width:94%;background:#fff;border:1px solid var(--line);border-radius:14px 14px 14px 4px;padding:12px 14px;font-size:16px;line-height:1.7}
+.air-ai li b{color:#0B6564}
+.air-ai ol{margin:6px 0 0;padding-left:1.4em;display:flex;flex-direction:column;gap:10px}
+.air-tag{display:none;margin-left:6px;font-size:12px;font-weight:bold;border-radius:999px;padding:1px 8px;vertical-align:2px}
+.air-t .air-tag{display:inline-block}
+.air-tag.o{background:#E3F2F1;color:#0B6564}.air-tag.s{background:#FBEFD9;color:#8A5A10}.air-tag.x{background:#F6E1DF;color:#8E2A23}
+.air-dots span{display:inline-block;width:7px;height:7px;margin:0 2px;border-radius:50%;background:#8A97A6;animation:airb 1s infinite}
+.air-dots span:nth-child(2){animation-delay:.15s}.air-dots span:nth-child(3){animation-delay:.3s}
+@keyframes airb{0%,80%,100%{opacity:.3}40%{opacity:1}}
+.air-legend{display:none;font-size:12px;color:var(--sub);padding:0 16px 8px}.air-t .air-legend{display:block}
+.air-foot{padding:10px 16px 14px;border-top:1px solid var(--line);display:flex;align-items:center;gap:10px;font-size:12px;color:var(--sub)}
+.air-foot span{flex:1}
+.air-foot button{font:inherit;font-size:12px;background:#fff;border:1px solid #9AA7B4;border-radius:8px;padding:4px 10px;color:var(--navy);cursor:pointer}
+#aiBtn{background:var(--navy)}`;
+  const mk = (t, c, h) => { const e = document.createElement(t); if (c) e.className = c; if (h != null) e.innerHTML = h; return e; };
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  let token = 0;
+  // **…** を太字にしながら1文字ずつ表示する
+  function typeRich(node, text, speed, my) {
+    const parts = text.split(/\*\*(.+?)\*\*/).map((t, i) => ({ t, b: i % 2 === 1 })).filter(x => x.t);
+    node.textContent = '';
+    return parts.reduce((pr, x) => pr.then(() => { if (my !== token) return; const n = x.b ? node.appendChild(document.createElement('b')) : node; const tn = n.appendChild(document.createTextNode('')); return new Promise(r => { let i = 0; const f = () => { if (my !== token) return r(); tn.data = x.t.slice(0, ++i); if (i < x.t.length) setTimeout(f, speed); else r(); }; f(); }); }), Promise.resolve());
+  }
+  function type(node, text, speed, my) { return new Promise(r => { let i = 0; const f = () => { if (my !== token) return r(); node.textContent = text.slice(0, ++i); if (i < text.length) setTimeout(f, speed); else r(); }; f(); }); }
+  { const s = document.createElement('style'); s.textContent = CSS; document.head.appendChild(s); }
+  async function open(p) {
+    const my = ++token;
+    const ov = mk('div', 'air-ov'), pn = mk('div', 'air-panel'); ov.appendChild(pn);
+    pn.setAttribute('role', 'dialog'); pn.setAttribute('aria-label', '川辺市長（AI）による提案のチェック');
+    pn.innerHTML = '<div class="air-head"><div class="air-av">市長</div><h3>川辺市長（AI）</h3><button class="air-x" aria-label="閉じる">×</button></div><div class="air-body" aria-live="polite"></div><div class="air-foot"><span>※川辺市長（AI）は架空の人物です。指摘は事前にAIで作成したものです</span></div>';
+    document.body.appendChild(ov);
+    const close = () => { token++; ov.remove(); };
+    pn.querySelector('.air-x').onclick = close;
+    ov.addEventListener('click', e => { if (e.target === ov) close(); });
+    const body = pn.querySelector('.air-body');
+    const summer = p.season === 'summer';
+    const where = summer
+      ? `常駐の2台を<b>${p.base.join('と')}</b>に、夏の臨時の3台目を<b>${p.third ? p.third : '置かない'}</b>${p.third ? 'に置きます' : 'ことにします'}。`
+      : `救急車2台を<b>${p.base.join('と')}</b>に置きます。`;
+    body.appendChild(mk('div', 'air-me', `市長、消防局の計画担当から提案します。${where}物差しは<b>「${p.metricName}」</b>です。`));
+    const dots = mk('div', 'air-ai air-dots', '<span></span><span></span><span></span>'); body.appendChild(dots);
+    await wait(1600); if (my !== token) return; dots.remove();
+    const ai = mk('div', 'air-ai'); body.appendChild(ai);
+    const intro = mk('div'); ai.appendChild(intro);
+    await type(intro, '計画担当のみなさん、提案をありがとう。決める前に、次の4つを確かめさせてください。', 28, my);
+    const ol = mk('ol'); ai.appendChild(ol);
+    for (const [q, k] of build(p)) {
+      if (my !== token) return;
+      const li = mk('li'), sp = mk('span'); li.appendChild(sp); ol.appendChild(li);
+      await wait(350); await typeRich(sp, q, 22, my);
+      body.scrollTop = body.scrollHeight;
+    }
+    if (my !== token) return;
+    const end = mk('div'); end.style.marginTop = '10px'; ai.appendChild(end);
+    await wait(300);
+    await type(end, '1と2は、アプリで確かめてから報告してください。3と4は、このモデルでは確かめられません。何を足せば確かめられるかを考えて、次の計画に生かしてください。', 24, my);
+    body.scrollTop = body.scrollHeight;
+  }
+  return { open, build };
+})();
+
+// ----- ボタン（②・③で表示）-----
+{
+  const row = document.createElement('div'); row.className = 'row'; row.id = 'aiRow';
+  row.innerHTML = '<button class="main" id="aiBtn">川辺市長（AI）に提案を見てもらう</button>';
+  $('metrics').after(row);
+  const upd = () => { row.style.display = state.step === 3 ? '' : 'none'; $('aiBtn').disabled = !ready(); };
+  const _refresh = refresh;
+  refresh = function () { _refresh(); upd(); };
+  upd();
+  $('aiBtn').addEventListener('click', () => {
+    if (!ready()) return;
+    if (!state.focus) { flash('先に「注目する物差し」を選んでください。川辺市長（AI）は、その物差しで選んだ理由を確かめます。'); return; }
+    const c = currentStations();
+    const tmp = state.step === 3 ? (c.tmp || '') : null;
+    const key = r => r.base.slice().sort().join() + '|' + r.tmp;
+    const yr = state.records.filter(r => r.step === state.step && r.days === 365 && r.n).sort((a, b) => b.no - a.no);
+    const me = { base: c.base, tmp };
+    const rec = yr.find(r => key(r) === key(me)) || null;
+    const rec0 = state.step === 3 && tmp ? yr.find(r => key(r) === key({ base: c.base, tmp: '' })) || null : null;
+    const seen = new Set(), others = yr.filter(r => { const k = key(r); if (seen.has(k)) return false; seen.add(k); return true; });
+    AiReview.open({
+      base: [...c.base], third: state.step === 3 ? c.tmp : null, season: season(),
+      metric: state.focus, metricName: METRICS[state.focus].label().replace(/（.*）/, ''),
+      limit: state.limit, maxMode: state.maxMode, rec, rec0, others,
+    });
+  });
+}
 </script>
 </body>
 </html>
