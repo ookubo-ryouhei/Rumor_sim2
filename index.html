@@ -1325,9 +1325,6 @@ const AiReview = (function () {
       body.scrollTop = body.scrollHeight;
     }
     if (my !== token) return;
-    const end = mk('div'); end.style.marginTop = '10px'; ai.appendChild(end);
-    await wait(300);
-    await type(end, '1と2は、アプリで確かめてから報告してください。3と4は、このモデルでは確かめられません。何を足せば確かめられるかを考えて、次の計画に生かしてください。', 24, my);
     body.scrollTop = body.scrollHeight;
   }
   return { open, build };
